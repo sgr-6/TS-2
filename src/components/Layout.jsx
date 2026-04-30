@@ -107,6 +107,17 @@ export default function Layout({ children }) {
           ))}
         </nav>
 
+        {!sidebarCollapsed && (
+          <div className="px-4 py-3 text-center">
+            <p className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: '#4f46e5', opacity: 0.8 }}>
+              Team
+            </p>
+            <p className="text-xs mt-1 font-medium" style={{ color: '#64748b' }}>
+              Sagar · Thejas<br/>Supriya · Thousif
+            </p>
+          </div>
+        )}
+
         {/* User + Logout */}
         <div className="p-3 border-t" style={{ borderColor: 'rgba(99,102,241,0.08)' }}>
           {!sidebarCollapsed && (
@@ -181,6 +192,15 @@ export default function Layout({ children }) {
             <NavItem key={item.to} item={item} collapsed={false} onClick={() => setMobileOpen(false)} />
           ))}
         </nav>
+
+        <div className="px-4 py-3 text-center">
+          <p className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: '#4f46e5', opacity: 0.8 }}>
+            Team
+          </p>
+          <p className="text-xs mt-1 font-medium" style={{ color: '#64748b' }}>
+            Sagar · Thejas<br/>Supriya · Thousif
+          </p>
+        </div>
         <div className="p-3 border-t" style={{ borderColor: 'rgba(99,102,241,0.08)' }}>
           <div className="flex items-center gap-2 px-3 py-2 mb-2">
             <div
