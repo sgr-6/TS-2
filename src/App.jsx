@@ -11,6 +11,7 @@ import InsightsPage from './pages/InsightsPage';
 import QRCheckInPage from './pages/QRCheckInPage';
 import GeofencePage from './pages/GeofencePage';
 import AdminPage from './pages/AdminPage';
+import SettingsPage from './pages/SettingsPage';
 
 function PrivateRoute({ children }) {
   const { user } = useAuth();
@@ -51,6 +52,7 @@ export default function App() {
                   <Route path="/insights" element={<InsightsPage />} />
                   <Route path="/qr-checkin" element={<QRCheckInPage />} />
                   <Route path="/geofence" element={<GeofencePage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </Layout>

@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard, Users, CalendarCheck, BarChart3, LogOut,
   GraduationCap, Menu, Brain, QrCode, MapPin, Sun, Moon,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Settings
 } from 'lucide-react';
 
 const NAV = [
@@ -15,6 +15,7 @@ const NAV = [
   { to:'/qr-checkin', icon:QrCode,           label:'QR Check-in',   dot:'#E8BC60' },
   { to:'/geofence',   icon:MapPin,           label:'Geofence',       dot:'#E88090' },
   { to:'/reports',    icon:BarChart3,        label:'Reports',        dot:'#6DBDAC' },
+  { to:'/settings',   icon:Settings,         label:'Settings',       dot:'#8B5CF6' },
 ];
 
 function NavItem({ item, mini, onClick }) {

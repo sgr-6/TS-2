@@ -4,6 +4,8 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  sendPasswordResetEmail,
+  updatePassword
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
@@ -11,7 +13,7 @@ import { auth, db } from '../firebase';
 const AuthContext = createContext(null);
 
 // Hardcoded admin email — change this to your desired admin account
-const ADMIN_EMAIL = 'appisagar01@gmail.com';
+const ADMIN_EMAIL = 'admin@gmail.com';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -56,12 +58,21 @@ export function AuthProvider({ children }) {
 
   const logout = () => signOut(auth);
 
+  const resetPassword = (email) => sendPasswordResetEmail(auth, email);
+
+  const updateUserPassword = (newPassword) => {
+    if (user) {
+      return updatePassword(user, newPassword);
+    }
+    return Promise.reject(new Error("No user logged in"));
+  };
+
   // Case-insensitive email check as primary, Firestore role as fallback
-  const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()
+  const isAdmin = user?.email?.trim()?.toLowerCase() === ADMIN_EMAIL.trim().toLowerCase()
     || userProfile?.role === 'admin';
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, login, register, logout, isAdmin, ADMIN_EMAIL }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, login, register, logout, resetPassword, updateUserPassword, isAdmin, ADMIN_EMAIL }}>
       {!loading && children}
     </AuthContext.Provider>
   );

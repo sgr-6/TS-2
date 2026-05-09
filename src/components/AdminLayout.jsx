@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { ShieldCheck, LayoutDashboard, Users, GraduationCap, BarChart3, LogOut, Sun, Moon, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, Users, GraduationCap, BarChart3, LogOut, Sun, Moon, Menu, X, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 
 const ADMIN_NAV = [
   { key:'overview',  icon:LayoutDashboard, label:'Overview',       dot:'#6366f1' },
   { key:'teachers',  icon:GraduationCap,   label:'All Teachers',   dot:'#10b981' },
   { key:'students',  icon:Users,           label:'All Students',   dot:'#7BB5E8' },
   { key:'reports',   icon:BarChart3,       label:'System Reports', dot:'#f59e0b' },
+  { key:'settings',  icon:Settings,        label:'Settings',       dot:'#8B5CF6' },
 ];
 
 export default function AdminLayout({ children, active, onNav }) {

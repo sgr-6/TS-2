@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useAllTeachers, useAllStudents, useAdminAllAttendance } from '../hooks/useFirestore';
 import { useAuth } from '../contexts/AuthContext';
 import AdminLayout from '../components/AdminLayout';
+import SettingsPage from './SettingsPage';
 import {
   Users, GraduationCap, BarChart3, TrendingUp, AlertCircle,
   Building2, BookOpen, Hash, ChevronDown, ChevronUp, Search,
@@ -328,6 +329,7 @@ export default function AdminPage() {
       {active==='teachers' && <AllTeachers {...props}/>}
       {active==='students' && <AllStudents {...props}/>}
       {active==='reports'  && <SystemReports {...props}/>}
+      {active==='settings' && <SettingsPage />}
     </AdminLayout>
   );
 }

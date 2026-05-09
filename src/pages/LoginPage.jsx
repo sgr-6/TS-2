@@ -14,7 +14,7 @@ function Field({ label, children }) {
 }
 
 export default function LoginPage() {
-  const { login, register } = useAuth();
+  const { login, register, resetPassword } = useAuth();
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
@@ -33,11 +33,16 @@ export default function LoginPage() {
       if (mode==='register') {
         if (!teacherName||!dept||!subName||!subCode){setError('All fields are required.');return;}
         await register(email,pass,{teacherName,department:dept,subjectName:subName,subjectCode:subCode,semester});
+      } else if (mode==='forgot') {
+        await resetPassword(email);
+        alert('Password reset email sent! Check your inbox.');
+        setMode('login');
       } else { await login(email,pass); }
     } catch(err) {
       setError(
         err.code==='auth/invalid-credential'?'Invalid email or password.':
         err.code==='auth/email-already-in-use'?'Email already registered.':
+        err.code==='auth/user-not-found'?'No account found with this email.':
         err.code==='auth/weak-password'?'Password must be at least 6 characters.':err.message);
     } finally { setLoading(false); }
   }
@@ -106,10 +111,10 @@ export default function LoginPage() {
           {/* Card */}
           <div className="card" style={{ padding:'1.75rem' }}>
             <h2 style={{ fontSize:'1.2rem',fontWeight:800,color:'var(--ct1)',letterSpacing:'-.02em',marginBottom:4 }}>
-              {mode==='admin'?'Admin Portal':mode==='register'?'Create Account':'Welcome back'}
+              {mode==='admin'?'Admin Portal':mode==='register'?'Create Account':mode==='forgot'?'Reset Password':'Welcome back'}
             </h2>
             <p style={{ fontSize:'12px',color:'var(--ct3)',marginBottom:'1.2rem',fontWeight:500 }}>
-              {mode==='admin'?'Principals & HODs access':mode==='register'?'Set up your subject profile':'Sign in to continue'}
+              {mode==='admin'?'Principals & HODs access':mode==='register'?'Set up your subject profile':mode==='forgot'?'Enter your email to receive a reset link':'Sign in to continue'}
             </p>
 
             {/* Tabs */}
@@ -158,19 +163,26 @@ export default function LoginPage() {
                 </div>
               </Field>
 
-              <Field label="Password">
-                <div style={{ position:'relative' }}>
-                  <Lock size={13} style={{ position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--ct4)',pointerEvents:'none' }}/>
-                  <input className="input" type={showPass?'text':'password'} placeholder="••••••••"
-                    value={pass} onChange={e=>setPass(e.target.value)} required
-                    style={{ paddingLeft:'2rem',paddingRight:'2.4rem' }}
-                    autoComplete={mode==='register'?'new-password':'current-password'}/>
-                  <button type="button" onClick={()=>setShowPass(v=>!v)}
-                    style={{ position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--ct3)',display:'flex' }}>
-                    {showPass?<EyeOff size={13}/>:<Eye size={13}/>}
-                  </button>
-                </div>
-              </Field>
+              {mode !== 'forgot' && (
+                <Field label={
+                  <div style={{ display:'flex', justifyContent:'space-between' }}>
+                    <span>Password</span>
+                    {mode==='login' && <button type="button" onClick={()=>{setMode('forgot');setError('');}} style={{ color:'var(--sky)',background:'none',border:'none',cursor:'pointer',fontSize:'10px',fontWeight:700,textTransform:'none' }}>Forgot?</button>}
+                  </div>
+                }>
+                  <div style={{ position:'relative' }}>
+                    <Lock size={13} style={{ position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--ct4)',pointerEvents:'none' }}/>
+                    <input className="input" type={showPass?'text':'password'} placeholder="••••••••"
+                      value={pass} onChange={e=>setPass(e.target.value)} required
+                      style={{ paddingLeft:'2rem',paddingRight:'2.4rem' }}
+                      autoComplete={mode==='register'?'new-password':'current-password'}/>
+                    <button type="button" onClick={()=>setShowPass(v=>!v)}
+                      style={{ position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--ct3)',display:'flex' }}>
+                      {showPass?<EyeOff size={13}/>:<Eye size={13}/>}
+                    </button>
+                  </div>
+                </Field>
+              )}
 
               {mode==='register' && <>
                 <Field label="Department">
@@ -205,19 +217,21 @@ export default function LoginPage() {
                 {loading?(
                   <span style={{ display:'flex',alignItems:'center',gap:8 }}>
                     <span style={{ width:14,height:14,border:'2px solid rgba(255,255,255,.3)',borderTopColor:'#fff',borderRadius:'50%',animation:'spin .6s linear infinite' }}/>
-                    {mode==='register'?'Creating account…':'Signing in…'}
+                    {mode==='register'?'Creating account…':mode==='forgot'?'Sending email…':'Signing in…'}
                   </span>
-                ):mode==='admin'?'🔐 Admin Sign In':mode==='register'?'Create Account →':'Sign In →'}
+                ):mode==='admin'?'🔐 Admin Sign In':mode==='register'?'Create Account →':mode==='forgot'?'Send Reset Link':'Sign In →'}
               </button>
             </form>
 
-            {/* Register link — shown for all modes */}
+            {/* Register/Forgot link — shown for all modes */}
             <p style={{ textAlign:'center',fontSize:'12px',color:'var(--ct3)',marginTop:14,fontWeight:500 }}>
               {mode==='register'
                 ? <>Already have an account? <button type="button" onClick={()=>{setMode('login');setError('');}} style={{ color:'var(--sage)',background:'none',border:'none',cursor:'pointer',fontWeight:700,fontSize:'12px',fontFamily:'Plus Jakarta Sans,sans-serif' }}>Sign In</button></>
-                : mode==='admin'
-                  ? <>New admin? <button type="button" onClick={()=>{setMode('register');setEmail('appisagar01@gmail.com');setError('');}} style={{ color:'var(--sage)',background:'none',border:'none',cursor:'pointer',fontWeight:700,fontSize:'12px',fontFamily:'Plus Jakarta Sans,sans-serif' }}>Register admin account →</button></>
-                  : <>No account yet? <button type="button" onClick={()=>{setMode('register');setError('');}} style={{ color:'var(--sage)',background:'none',border:'none',cursor:'pointer',fontWeight:700,fontSize:'12px',fontFamily:'Plus Jakarta Sans,sans-serif' }}>Register free</button></>
+                : mode==='forgot'
+                  ? <>Remembered your password? <button type="button" onClick={()=>{setMode('login');setError('');}} style={{ color:'var(--sage)',background:'none',border:'none',cursor:'pointer',fontWeight:700,fontSize:'12px',fontFamily:'Plus Jakarta Sans,sans-serif' }}>Sign In</button></>
+                  : mode==='admin'
+                    ? <>New admin? <button type="button" onClick={()=>{setMode('register');setEmail('admin@gmail.com');setError('');}} style={{ color:'var(--sage)',background:'none',border:'none',cursor:'pointer',fontWeight:700,fontSize:'12px',fontFamily:'Plus Jakarta Sans,sans-serif' }}>Register admin account →</button></>
+                    : <>No account yet? <button type="button" onClick={()=>{setMode('register');setError('');}} style={{ color:'var(--sage)',background:'none',border:'none',cursor:'pointer',fontWeight:700,fontSize:'12px',fontFamily:'Plus Jakarta Sans,sans-serif' }}>Register free</button></>
               }
             </p>
 
