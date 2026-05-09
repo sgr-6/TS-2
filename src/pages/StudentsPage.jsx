@@ -30,13 +30,13 @@ function StudentModal({ student, onClose, onSave }) {
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal-content animate-scale-in">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold" style={{ color: '#f1f5f9' }}>
+          <h2 className="text-lg font-semibold" style={{ color: 'var(--ct1)' }}>
             {student ? 'Edit Student' : 'Add New Student'}
           </h2>
           <button
             onClick={onClose}
             className="p-2 rounded-xl"
-            style={{ color: '#64748b', background: 'rgba(99,102,241,0.08)', border: 'none', cursor: 'pointer', minHeight: '44px', minWidth: '44px' }}
+            style={{ color: 'var(--ct3)', background: 'var(--card2)', border: '1px solid var(--c-edge)', cursor: 'pointer', minHeight: '44px', minWidth: '44px' }}
           >
             <X size={18} />
           </button>
@@ -53,7 +53,7 @@ function StudentModal({ student, onClose, onSave }) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: '#94a3b8' }}>Full Name</label>
+            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--ct3)' }}>Full Name</label>
             <input
               id="student-name-input"
               className="input"
@@ -64,7 +64,7 @@ function StudentModal({ student, onClose, onSave }) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: '#94a3b8' }}>Roll Number</label>
+            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--ct3)' }}>Roll Number</label>
             <input
               id="student-rollno-input"
               className="input"
@@ -75,7 +75,7 @@ function StudentModal({ student, onClose, onSave }) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: '#94a3b8' }}>Class / Section</label>
+            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--ct3)' }}>Class / Section</label>
             <input
               id="student-class-input"
               className="input"
@@ -164,8 +164,8 @@ export default function StudentsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#f1f5f9' }}>Students</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#64748b' }}>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--ct1)' }}>Students</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--ct3)' }}>
             {students.length} student{students.length !== 1 ? 's' : ''} registered
           </p>
         </div>
@@ -176,7 +176,7 @@ export default function StudentsPage() {
 
       {/* Search */}
       <div className="relative">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#475569' }} />
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--ct3)' }} />
         <input
           id="student-search"
           className="input pl-10"
@@ -212,11 +212,11 @@ export default function StudentsPage() {
             <tbody>
               {filtered.map((s, i) => (
                 <tr key={s.id}>
-                  <td style={{ color: '#475569' }}>{i + 1}</td>
-                  <td style={{ color: '#e2e8f0', fontWeight: 500 }}>{s.name}</td>
-                  <td style={{ color: '#94a3b8' }}>{s.rollNo}</td>
+                  <td style={{ color: 'var(--ct3)' }}>{i + 1}</td>
+                  <td style={{ color: 'var(--ct1)', fontWeight: 600 }}>{s.name}</td>
+                  <td style={{ color: 'var(--ct2)' }}>{s.rollNo}</td>
                   <td>
-                    <span className="badge" style={{ background: 'rgba(99,102,241,0.12)', color: '#a5b4fc' }}>
+                    <span className="badge" style={{ background: 'var(--sky-l)', color: 'var(--sky)', border: '1px solid var(--sky-b)' }}>
                       {s.class}
                     </span>
                   </td>

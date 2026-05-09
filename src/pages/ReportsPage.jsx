@@ -48,9 +48,9 @@ function downloadPDF(rows, title) {
 const CustomBarTooltip = ({ active, payload, label }) => {
   if (active && payload?.length) {
     return (
-      <div className="glass px-3 py-2 rounded-xl text-sm" style={{ color: '#e2e8f0' }}>
-        <p className="font-medium mb-1 truncate max-w-40">{label}</p>
-        <p style={{ color: '#a5b4fc' }}>Attendance: <strong>{payload[0]?.value}%</strong></p>
+      <div style={{ background:'var(--card)',border:'1px solid var(--c-edge)',borderRadius:10,padding:'8px 12px',fontSize:12,color:'var(--ct1)',boxShadow:'var(--c-shad)' }}>
+        <p style={{ fontWeight:700,marginBottom:3 }}>{label}</p>
+        <p style={{ color:'var(--sage)',fontWeight:600 }}>Attendance: <strong>{payload[0]?.value}%</strong></p>
       </div>
     );
   }
@@ -118,8 +118,8 @@ export default function ReportsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#f1f5f9' }}>Reports</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#64748b' }}>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--ct1)' }}>Reports</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--ct3)' }}>
             Attendance analytics & export
           </p>
         </div>
@@ -158,13 +158,13 @@ export default function ReportsPage() {
         </select>
         <div className="flex gap-3 flex-wrap">
           {[
-            { label: 'Students', val: reportRows.length, color: '#6366f1' },
-            { label: 'Avg %', val: reportRows.length ? `${Math.round(reportRows.reduce((a, r) => a + r.pct, 0) / reportRows.length)}%` : '—', color: '#f59e0b' },
-            { label: 'Below 75%', val: reportRows.filter((r) => r.total > 0 && r.pct < 75).length, color: '#ef4444' },
+            { label: 'Students', val: reportRows.length, color: 'var(--sky)' },
+            { label: 'Avg %', val: reportRows.length ? `${Math.round(reportRows.reduce((a, r) => a + r.pct, 0) / reportRows.length)}%` : '—', color: 'var(--gold)' },
+            { label: 'Below 75%', val: reportRows.filter((r) => r.total > 0 && r.pct < 75).length, color: 'var(--rose)' },
           ].map((s) => (
             <div key={s.label} className="glass-card px-4 py-2 flex gap-2 items-center" style={{ borderRadius: 12 }}>
               <span style={{ color: s.color, fontWeight: 700, fontSize: '1rem' }}>{s.val}</span>
-              <span style={{ color: '#64748b', fontSize: '0.75rem' }}>{s.label}</span>
+              <span style={{ color: 'var(--ct3)', fontSize: '0.75rem' }}>{s.label}</span>
             </div>
           ))}
         </div>
@@ -174,23 +174,23 @@ export default function ReportsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Bar chart */}
         <div className="glass-card p-5 lg:col-span-2">
-          <h2 className="text-sm font-semibold mb-4 flex items-center gap-2" style={{ color: '#e2e8f0' }}>
-            <BarChart3 size={16} style={{ color: '#6366f1' }} /> Daily Attendance (%)
+          <h2 className="text-sm font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--ct1)' }}>
+            <BarChart3 size={16} style={{ color: 'var(--sage)' }} /> Daily Attendance (%)
           </h2>
           {loading ? (
-            <div className="h-48 flex items-center justify-center text-sm" style={{ color: '#475569' }}>Loading…</div>
+            <div className="h-48 flex items-center justify-center text-sm" style={{ color: 'var(--ct3)' }}>Loading…</div>
           ) : weeklyData.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-sm" style={{ color: '#475569' }}>No data yet.</div>
+            <div className="h-48 flex items-center justify-center text-sm" style={{ color: 'var(--ct3)' }}>No data yet.</div>
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={weeklyData} margin={{ top: 0, right: 4, left: -24, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.08)" />
-                <XAxis dataKey="date" tick={{ fill: '#475569', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis domain={[0, 100]} tick={{ fill: '#475569', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--c-edge)" />
+                <XAxis dataKey="date" tick={{ fill: 'var(--ct3)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fill: 'var(--ct3)', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip content={<CustomBarTooltip />} />
                 <Bar dataKey="pct" radius={[6, 6, 0, 0]}>
                   {weeklyData.map((entry, i) => (
-                    <Cell key={i} fill={entry.pct >= 75 ? '#6366f1' : '#ef4444'} fillOpacity={0.85} />
+                    <Cell key={i} fill={entry.pct >= 75 ? '#7EAD7C' : '#E88090'} fillOpacity={0.85} />
                   ))}
                 </Bar>
               </BarChart>
@@ -200,11 +200,11 @@ export default function ReportsPage() {
 
         {/* Pie chart */}
         <div className="glass-card p-5">
-          <h2 className="text-sm font-semibold mb-4 flex items-center gap-2" style={{ color: '#e2e8f0' }}>
-            <TrendingUp size={16} style={{ color: '#10b981' }} /> Overall Split
+          <h2 className="text-sm font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--ct1)' }}>
+            <TrendingUp size={16} style={{ color: 'var(--sage)' }} /> Overall Split
           </h2>
           {totalPresent + totalAbsent === 0 ? (
-            <div className="h-48 flex items-center justify-center text-sm" style={{ color: '#475569' }}>No data yet.</div>
+            <div className="h-48 flex items-center justify-center text-sm" style={{ color: 'var(--ct3)' }}>No data yet.</div>
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
@@ -223,7 +223,7 @@ export default function ReportsPage() {
                 <Legend
                   iconType="circle"
                   iconSize={10}
-                  formatter={(value) => <span style={{ color: '#94a3b8', fontSize: 12 }}>{value}</span>}
+                  formatter={(value) => <span style={{ color: 'var(--ct2)', fontSize: 12 }}>{value}</span>}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -233,15 +233,15 @@ export default function ReportsPage() {
 
       {/* Report Table */}
       <div className="glass-card">
-        <div className="px-5 py-4 border-b" style={{ borderColor: 'rgba(99,102,241,0.08)' }}>
-          <h2 className="text-sm font-semibold" style={{ color: '#e2e8f0' }}>
+        <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--c-edge)' }}>
+          <h2 className="text-sm font-semibold" style={{ color: 'var(--ct1)' }}>
             Detailed Student Report
           </h2>
         </div>
         {loading ? (
-          <div className="p-8 text-center text-sm" style={{ color: '#475569' }}>Loading…</div>
+          <div className="p-8 text-center text-sm" style={{ color: 'var(--ct3)' }}>Loading…</div>
         ) : reportRows.length === 0 ? (
-          <div className="p-8 text-center text-sm" style={{ color: '#475569' }}>No data available.</div>
+          <div className="p-8 text-center text-sm" style={{ color: 'var(--ct3)' }}>No data available.</div>
         ) : (
           <div className="table-container" style={{ border: 'none', borderRadius: 0 }}>
             <table>
@@ -262,15 +262,15 @@ export default function ReportsPage() {
                   const barColor = r.pct >= 75 ? '#10b981' : r.pct >= 50 ? '#f59e0b' : '#ef4444';
                   return (
                     <tr key={r.id}>
-                      <td style={{ color: '#e2e8f0', fontWeight: 500 }}>{r.name}</td>
-                      <td style={{ color: '#94a3b8' }}>{r.rollNo}</td>
-                      <td style={{ color: '#94a3b8' }}>{r.class}</td>
-                      <td style={{ color: '#34d399' }}>{r.present}</td>
-                      <td style={{ color: '#f87171' }}>{r.absent}</td>
-                      <td style={{ color: '#94a3b8' }}>{r.total}</td>
+                      <td style={{ color: 'var(--ct1)', fontWeight: 600 }}>{r.name}</td>
+                      <td style={{ color: 'var(--ct2)' }}>{r.rollNo}</td>
+                      <td style={{ color: 'var(--ct2)' }}>{r.class}</td>
+                      <td style={{ color: 'var(--sage)', fontWeight: 600 }}>{r.present}</td>
+                      <td style={{ color: 'var(--rose)', fontWeight: 600 }}>{r.absent}</td>
+                      <td style={{ color: 'var(--ct3)' }}>{r.total}</td>
                       <td>
                         <div className="flex items-center gap-2">
-                          <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: '#1e293b' }}>
+                          <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--card3)' }}>
                             <div
                               className="h-full rounded-full"
                               style={{ width: `${r.pct}%`, background: barColor }}

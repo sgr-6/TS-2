@@ -8,149 +8,124 @@ export default function InsightsPage() {
   const [scanning, setScanning] = useState(false);
   const [vibeResult, setVibeResult] = useState(null);
 
-  // Predictive Dropout Risk Logic
   const riskStudents = students.map(student => {
-    const studentRecords = records.filter(r => r.studentId === student.id);
-    const total = studentRecords.length;
-    const present = studentRecords.filter(r => r.status === 'present').length;
+    const sr = records.filter(r => r.studentId === student.id);
+    const total = sr.length;
+    const present = sr.filter(r => r.status === 'present').length;
     const rate = total === 0 ? 100 : (present / total) * 100;
-    
-    // Check for recent continuous absences (last 3 days)
-    const sorted = [...studentRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
-    const recentMisses = sorted.slice(0, 3).filter(r => r.status === 'absent').length;
-
+    const sorted = [...sr].sort((a,b) => new Date(b.date)-new Date(a.date));
+    const recentMisses = sorted.slice(0,3).filter(r => r.status==='absent').length;
     let riskLevel = 'Low';
     if (rate < 75 || recentMisses >= 2) riskLevel = 'Medium';
     if (rate < 60 || recentMisses === 3) riskLevel = 'High';
-
     return { ...student, rate, riskLevel, recentMisses };
   }).filter(s => s.riskLevel !== 'Low');
 
   const runVibeCheck = () => {
-    setScanning(true);
-    setVibeResult(null);
+    setScanning(true); setVibeResult(null);
     setTimeout(() => {
       setScanning(false);
       setVibeResult({
-        focused: Math.floor(Math.random() * 40) + 40, // 40-80%
-        tired: Math.floor(Math.random() * 30) + 10,  // 10-40%
-        distracted: Math.floor(Math.random() * 20) + 5, // 5-25%
+        focused: Math.floor(Math.random()*40)+40,
+        tired:   Math.floor(Math.random()*30)+10,
+        distracted: Math.floor(Math.random()*20)+5,
       });
     }, 2500);
   };
 
+  const Bar = ({ label, value, color }) => (
+    <div>
+      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
+        <span style={{ fontSize:'13px', fontWeight:600, color }}>{label}</span>
+        <span style={{ fontSize:'13px', fontWeight:700, color:'var(--ct1)' }}>{value}%</span>
+      </div>
+      <div className="pbar-track">
+        <div className="pbar-fill" style={{ width:`${value}%`, background:color }}/>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="page-wrap anim-in">
       <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: '#f1f5f9' }}>
-          <Brain size={28} color="#a5b4fc" /> Smart Insights & AI
+        <h1 className="page-title" style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <Brain size={24} style={{ color:'var(--mauve)' }}/> Smart Insights
         </h1>
-        <p className="text-sm mt-0.5" style={{ color: '#64748b' }}>
-          Predictive analytics and real-time class sentiment analysis.
-        </p>
+        <p className="page-sub">Predictive analytics and real-time class sentiment analysis.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* AI Sentiment Analysis */}
-        <div className="glass-card p-6 border-t-4 border-indigo-500">
-          <div className="flex justify-between items-start mb-6">
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))', gap:16 }}>
+        {/* Sentiment Scanner */}
+        <div className="card" style={{ padding:'22px', borderTop:'3px solid var(--mauve)' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16 }}>
             <div>
-              <h2 className="text-lg font-semibold" style={{ color: '#e2e8f0' }}>Class Sentiment Radar</h2>
-              <p className="text-xs" style={{ color: '#94a3b8' }}>Analyze real-time student engagement via virtual camera scan.</p>
+              <h2 style={{ fontSize:'15px', fontWeight:700, color:'var(--ct1)', marginBottom:3 }}>Class Sentiment Radar</h2>
+              <p style={{ fontSize:'12px', color:'var(--ct3)', fontWeight:500 }}>Analyze real-time student engagement via virtual camera scan.</p>
             </div>
-            <div className="p-2 rounded-lg" style={{ background: 'rgba(99,102,241,0.1)' }}>
-              <ScanFace size={24} color="#a5b4fc" />
+            <div style={{ padding:8, borderRadius:10, background:'var(--mauve-l)', border:'1px solid var(--mauve-b)', flexShrink:0 }}>
+              <ScanFace size={20} style={{ color:'var(--mauve)' }}/>
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center min-h-[200px] mb-4" style={{ background: 'rgba(15,23,42,0.4)', borderRadius: '12px' }}>
+          <div style={{ minHeight:180, borderRadius:14, background:'var(--card2)', border:'1px solid var(--c-edge)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', marginBottom:14, padding:16 }}>
             {scanning ? (
-              <div className="flex flex-col items-center animate-pulse">
-                <ScanFace size={48} color="#6366f1" className="mb-4" />
-                <p style={{ color: '#a5b4fc' }}>Running AI Vibe Check...</p>
+              <div style={{ textAlign:'center' }}>
+                <ScanFace size={40} style={{ color:'var(--mauve)', marginBottom:10 }}/>
+                <p style={{ fontSize:'13px', color:'var(--ct2)', fontWeight:600 }}>Running AI Vibe Check…</p>
               </div>
             ) : vibeResult ? (
-              <div className="w-full p-6 space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span style={{ color: '#34d399' }}>Focused / Engaged</span>
-                    <span style={{ color: '#e2e8f0' }}>{vibeResult.focused}%</span>
-                  </div>
-                  <div className="h-2 rounded-full" style={{ background: 'rgba(52,211,153,0.2)' }}>
-                    <div className="h-full rounded-full bg-emerald-400" style={{ width: `${vibeResult.focused}%`, transition: 'width 1s ease' }}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span style={{ color: '#fcd34d' }}>Tired / Low Energy</span>
-                    <span style={{ color: '#e2e8f0' }}>{vibeResult.tired}%</span>
-                  </div>
-                  <div className="h-2 rounded-full" style={{ background: 'rgba(252,211,77,0.2)' }}>
-                    <div className="h-full rounded-full bg-amber-400" style={{ width: `${vibeResult.tired}%`, transition: 'width 1s ease' }}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span style={{ color: '#f87171' }}>Distracted</span>
-                    <span style={{ color: '#e2e8f0' }}>{vibeResult.distracted}%</span>
-                  </div>
-                  <div className="h-2 rounded-full" style={{ background: 'rgba(248,113,113,0.2)' }}>
-                    <div className="h-full rounded-full bg-red-400" style={{ width: `${vibeResult.distracted}%`, transition: 'width 1s ease' }}></div>
-                  </div>
-                </div>
+              <div style={{ width:'100%', display:'flex', flexDirection:'column', gap:14 }}>
+                <Bar label="Focused / Engaged" value={vibeResult.focused} color={`var(--sage)`}/>
+                <Bar label="Tired / Low Energy"  value={vibeResult.tired}   color={`var(--gold)`}/>
+                <Bar label="Distracted"           value={vibeResult.distracted} color={`var(--rose)`}/>
               </div>
             ) : (
-              <div className="text-center p-6">
-                <p className="text-sm mb-4" style={{ color: '#94a3b8' }}>Camera ready for sentiment scan.</p>
-              </div>
+              <p style={{ fontSize:'13px', color:'var(--ct3)', fontWeight:500 }}>Camera ready for sentiment scan.</p>
             )}
           </div>
-          <button 
-            className="btn btn-primary w-full" 
-            onClick={runVibeCheck}
-            disabled={scanning}
-          >
-            {scanning ? 'Scanning...' : 'Run Vibe Check'}
+          <button className="btn btn-primary" onClick={runVibeCheck} disabled={scanning} style={{ width:'100%', minHeight:42 }}>
+            {scanning ? 'Scanning…' : 'Run Vibe Check'}
           </button>
         </div>
 
-        {/* Predictive Dropout Risk */}
-        <div className="glass-card p-6 border-t-4 border-red-500">
-          <div className="flex justify-between items-start mb-6">
+        {/* Dropout Risk */}
+        <div className="card" style={{ padding:'22px', borderTop:'3px solid var(--rose)' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16 }}>
             <div>
-              <h2 className="text-lg font-semibold flex items-center gap-2" style={{ color: '#e2e8f0' }}>
-                <TrendingDown size={20} color="#f87171" /> Predictive Risk Alerts
+              <h2 style={{ fontSize:'15px', fontWeight:700, color:'var(--ct1)', marginBottom:3, display:'flex', alignItems:'center', gap:6 }}>
+                <TrendingDown size={17} style={{ color:'var(--rose)' }}/> Predictive Risk Alerts
               </h2>
-              <p className="text-xs" style={{ color: '#94a3b8' }}>AI analysis of attendance patterns to prevent dropouts.</p>
+              <p style={{ fontSize:'12px', color:'var(--ct3)', fontWeight:500 }}>AI analysis of attendance patterns to prevent dropouts.</p>
             </div>
-            <div className="p-2 rounded-lg" style={{ background: 'rgba(239,68,68,0.1)' }}>
-              <ShieldAlert size={24} color="#f87171" />
+            <div style={{ padding:8, borderRadius:10, background:'var(--rose-l)', border:'1px solid var(--rose-b)', flexShrink:0 }}>
+              <ShieldAlert size={20} style={{ color:'var(--rose)' }}/>
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {riskStudents.length === 0 ? (
-              <div className="p-4 rounded-xl text-center" style={{ background: 'rgba(52,211,153,0.05)', border: '1px solid rgba(52,211,153,0.2)' }}>
-                <p style={{ color: '#34d399' }}>All students have healthy attendance patterns!</p>
+              <div style={{ padding:'16px', borderRadius:12, textAlign:'center', background:'var(--sage-l)', border:'1px solid var(--sage-b)' }}>
+                <p style={{ fontSize:'13px', color:'var(--sage)', fontWeight:600 }}>✓ All students have healthy attendance!</p>
               </div>
-            ) : (
-              riskStudents.map(student => (
-                <div key={student.id} className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'rgba(15,23,42,0.6)', border: `1px solid ${student.riskLevel === 'High' ? 'rgba(248,113,113,0.3)' : 'rgba(252,211,77,0.3)'}` }}>
+            ) : riskStudents.map(s => {
+              const isHigh = s.riskLevel === 'High';
+              const col = isHigh ? 'var(--rose)' : 'var(--gold)';
+              const bg  = isHigh ? 'var(--rose-l)' : 'var(--gold-l)';
+              const bd  = isHigh ? 'var(--rose-b)' : 'var(--gold-b)';
+              return (
+                <div key={s.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', borderRadius:12, background:bg, border:`1px solid ${bd}` }}>
                   <div>
-                    <p className="font-medium" style={{ color: '#e2e8f0' }}>{student.name}</p>
-                    <p className="text-xs mt-1" style={{ color: '#94a3b8' }}>
-                      {student.recentMisses > 0 ? `Missed ${student.recentMisses} recent classes` : `Overall rate: ${student.rate.toFixed(1)}%`}
+                    <p style={{ fontSize:'13px', fontWeight:700, color:'var(--ct1)', marginBottom:2 }}>{s.name}</p>
+                    <p style={{ fontSize:'11px', color:'var(--ct3)', fontWeight:500 }}>
+                      {s.recentMisses > 0 ? `Missed ${s.recentMisses} recent classes` : `Rate: ${s.rate.toFixed(1)}%`}
                     </p>
                   </div>
-                  <span className="px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wide" style={{ 
-                    background: student.riskLevel === 'High' ? 'rgba(248,113,113,0.2)' : 'rgba(252,211,77,0.2)',
-                    color: student.riskLevel === 'High' ? '#f87171' : '#fbbf24'
-                  }}>
-                    {student.riskLevel} Risk
+                  <span className="badge" style={{ background:'rgba(0,0,0,.05)', color:col, fontSize:'10px', fontWeight:800 }}>
+                    {s.riskLevel} RISK
                   </span>
                 </div>
-              ))
-            )}
+              );
+            })}
           </div>
         </div>
       </div>

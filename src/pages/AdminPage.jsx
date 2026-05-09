@@ -8,29 +8,15 @@ import {
 
 function StatCard({ icon: Icon, label, value, sub, color, delay = 0 }) {
   return (
-    <div
-      className="rounded-2xl p-5 flex gap-4 items-start"
-      style={{
-        background: 'rgba(15,23,42,0.4)',
-        border: '1px solid rgba(99,102,241,0.1)',
-        backdropFilter: 'blur(16px)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
-        animationDelay: `${delay}ms`,
-      }}
-    >
-      <div
-        className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{
-          background: `rgba(${color === '#6366f1' ? '99,102,241' : color === '#10b981' ? '16,185,129' : color === '#f59e0b' ? '245,158,11' : color === '#8b5cf6' ? '139,92,246' : '239,68,68'},0.15)`,
-          border: `1px solid rgba(${color === '#6366f1' ? '99,102,241' : color === '#10b981' ? '16,185,129' : color === '#f59e0b' ? '245,158,11' : color === '#8b5cf6' ? '139,92,246' : '239,68,68'},0.2)`,
-        }}
-      >
+    <div className="card p-5 flex gap-4 items-start" style={{ animationDelay:`${delay}ms` }}>
+      <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+        style={{ background:`${color}15`, border:`1px solid ${color}28` }}>
         <Icon size={22} style={{ color }} />
       </div>
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#475569' }}>{label}</p>
-        <p className="text-2xl font-black" style={{ color: '#f1f5f9' }}>{value}</p>
-        {sub && <p className="text-xs mt-0.5 font-medium" style={{ color: '#475569' }}>{sub}</p>}
+        <p style={{ fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.07em',color:'var(--ct3)',marginBottom:4 }}>{label}</p>
+        <p style={{ fontSize:'1.5rem',fontWeight:900,color:'var(--ct1)',letterSpacing:'-.03em',lineHeight:1 }}>{value}</p>
+        {sub && <p style={{ fontSize:'11px',color:'var(--ct3)',marginTop:3,fontWeight:500 }}>{sub}</p>}
       </div>
     </div>
   );
@@ -65,21 +51,15 @@ function TeacherCard({ teacher, students, attendanceRecords }) {
       >
         <div className="flex items-center gap-4 min-w-0">
           {/* Avatar */}
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black flex-shrink-0"
-            style={{
-              background: 'linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.2))',
-              border: '1px solid rgba(99,102,241,0.25)',
-              color: '#a5b4fc',
-            }}
-          >
-            {(teacher.teacherName || teacher.email || '?')[0].toUpperCase()}
-          </div>
-          <div className="min-w-0">
-            <p className="font-bold truncate" style={{ color: '#e2e8f0' }}>
-              {teacher.teacherName || 'Unknown Teacher'}
-            </p>
-            <p className="text-xs truncate mt-0.5 flex items-center gap-1.5" style={{ color: '#64748b' }}>
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black flex-shrink-0"
+          style={{ background:'var(--sage-l)',border:'1px solid var(--sage-b)',color:'var(--sage)' }}>
+          {(teacher.teacherName || teacher.email || '?')[0].toUpperCase()}
+        </div>
+        <div className="min-w-0">
+          <p className="font-bold truncate" style={{ color:'var(--ct1)' }}>
+            {teacher.teacherName || 'Unknown Teacher'}
+          </p>
+          <p className="text-xs truncate mt-0.5 flex items-center gap-1.5" style={{ color:'var(--ct3)' }}>
               <Building2 size={11} /> {teacher.department || '—'} &nbsp;·&nbsp;
               <BookOpen size={11} /> {teacher.subjectName || '—'}
             </p>
@@ -88,22 +68,20 @@ function TeacherCard({ teacher, students, attendanceRecords }) {
 
         <div className="flex items-center gap-4 flex-shrink-0 ml-4">
           <div className="text-right hidden sm:block">
-            <p className="text-xs font-medium" style={{ color: '#475569' }}>Avg Attendance</p>
-            <p className="text-lg font-black" style={{ color: pctColor }}>
-              {avgPct}{avgPct !== '—' ? '%' : ''}
-            </p>
+            <p style={{ fontSize:'11px',fontWeight:600,color:'var(--ct3)' }}>Avg Attendance</p>
+            <p style={{ fontSize:'1.1rem',fontWeight:900,color:pctColor }}>{avgPct}{avgPct!=='—'?'%':''}</p>
           </div>
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="text-xs font-bold" style={{ color: '#6366f1' }}>{teacherStudents.length}</span>
-            <span className="text-[10px]" style={{ color: '#475569' }}>Students</span>
+          <div style={{ display:'flex',flexDirection:'column',alignItems:'center',gap:2 }}>
+            <span style={{ fontSize:'13px',fontWeight:800,color:'var(--sky)' }}>{teacherStudents.length}</span>
+            <span style={{ fontSize:'9px',fontWeight:600,color:'var(--ct3)',textTransform:'uppercase',letterSpacing:'.06em' }}>Students</span>
           </div>
-          {expanded ? <ChevronUp size={16} style={{ color: '#475569' }} /> : <ChevronDown size={16} style={{ color: '#475569' }} />}
+          {expanded?<ChevronUp size={15} style={{color:'var(--ct3)'}}/>:<ChevronDown size={15} style={{color:'var(--ct3)'}}/>}
         </div>
       </div>
 
       {/* Expanded details */}
       {expanded && (
-        <div style={{ borderTop: '1px solid rgba(99,102,241,0.08)' }}>
+        <div style={{ borderTop: '1px solid var(--c-edge)' }}>
           {/* Subject info */}
           <div className="px-5 py-3 flex flex-wrap gap-4">
             {[
@@ -112,30 +90,30 @@ function TeacherCard({ teacher, students, attendanceRecords }) {
               { icon: GraduationCap, label: 'Semester', val: teacher.semester || '—' },
               { icon: Building2, label: 'Department', val: teacher.department || '—' },
             ].map(({ icon: Ic, label, val }) => (
-              <div key={label} className="flex items-center gap-2">
-                <Ic size={13} style={{ color: '#6366f1' }} />
-                <span className="text-xs" style={{ color: '#475569' }}>{label}:</span>
-                <span className="text-xs font-semibold" style={{ color: '#94a3b8' }}>{val}</span>
+              <div key={label} style={{ display:'flex',alignItems:'center',gap:6 }}>
+                <Ic size={13} style={{ color:'var(--sage)' }} />
+                <span style={{ fontSize:'11px',color:'var(--ct3)',fontWeight:600 }}>{label}:</span>
+                <span style={{ fontSize:'11px',fontWeight:700,color:'var(--ct1)' }}>{val}</span>
               </div>
             ))}
-            <div className="flex items-center gap-2">
-              <span className="text-xs" style={{ color: '#475569' }}>Email:</span>
-              <span className="text-xs font-semibold" style={{ color: '#818cf8' }}>{teacher.email}</span>
+            <div style={{ display:'flex',alignItems:'center',gap:6 }}>
+              <span style={{ fontSize:'11px',color:'var(--ct3)',fontWeight:600 }}>Email:</span>
+              <span style={{ fontSize:'11px',fontWeight:700,color:'var(--sky)' }}>{teacher.email}</span>
             </div>
           </div>
 
           {/* Students list */}
           {teacherStudents.length > 0 ? (
-            <div style={{ borderTop: '1px solid rgba(99,102,241,0.06)' }}>
-              <p className="px-5 py-2 text-[10px] uppercase tracking-widest font-bold" style={{ color: '#475569' }}>
+            <div style={{ borderTop: '1px solid var(--c-edge)' }}>
+              <p className="px-5 py-2 text-[10px] uppercase tracking-widest font-bold" style={{ color: 'var(--ct3)' }}>
                 Students ({teacherStudents.length})
               </p>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr style={{ background: 'rgba(15,23,42,0.5)' }}>
+                    <tr style={{ background: 'var(--card-bg)' }}>
                       {['Name', 'Roll No', 'Class', 'Attendance'].map(h => (
-                        <th key={h} className="px-5 py-2 text-left font-semibold" style={{ color: '#475569' }}>{h}</th>
+                        <th key={h} className="px-5 py-2 text-left font-semibold" style={{ color: 'var(--ct3)' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -144,21 +122,16 @@ function TeacherCard({ teacher, students, attendanceRecords }) {
                       const sAtt = teacherAttendance.filter(r => r.studentId === s.id);
                       const sPresent = sAtt.filter(r => r.status === 'present').length;
                       const sPct = sAtt.length > 0 ? ((sPresent / sAtt.length) * 100).toFixed(1) : null;
-                      const col = !sPct ? '#64748b' : parseFloat(sPct) >= 75 ? '#10b981' : '#f87171';
+                      const col = !sPct ? 'var(--ct3)' : parseFloat(sPct) >= 75 ? 'var(--green)' : 'var(--red)';
                       return (
-                        <tr key={s.id} style={{ borderTop: '1px solid rgba(99,102,241,0.04)' }}>
-                          <td className="px-5 py-2.5 font-medium" style={{ color: '#e2e8f0' }}>{s.name}</td>
-                          <td className="px-5 py-2.5" style={{ color: '#64748b' }}>{s.rollNo}</td>
-                          <td className="px-5 py-2.5" style={{ color: '#64748b' }}>{s.class}</td>
-                          <td className="px-5 py-2.5">
-                            <span
-                              className="px-2 py-0.5 rounded-full text-[10px] font-bold"
-                              style={{ background: `${col}20`, color: col }}
-                            >
-                              {sPct ? `${sPct}%` : 'No Data'}
-                            </span>
-                          </td>
-                        </tr>
+                  <tr style={{ borderTop: '1px solid var(--c-edge)' }}>
+                    <td style={{ padding:'8px 16px',fontWeight:600,color:'var(--ct1)' }}>{s.name}</td>
+                    <td style={{ padding:'8px 16px',color:'var(--ct3)' }}>{s.rollNo}</td>
+                    <td style={{ padding:'8px 16px',color:'var(--ct3)' }}>{s.class}</td>
+                      <td style={{ padding:'8px 16px' }}>
+                        <span className="badge" style={{ background:`${col}15`, color:col }}>{sPct?`${sPct}%`:'No Data'}</span>
+                      </td>
+                    </tr>
                       );
                     })}
                   </tbody>
@@ -200,7 +173,7 @@ export default function AdminPage() {
   );
 
   return (
-    <div className="min-h-screen p-4 md:p-8" style={{ background: 'radial-gradient(ellipse at 70% 0%, rgba(99,102,241,0.1) 0%, transparent 50%), #020617' }}>
+    <div className="min-h-screen p-4 md:p-8" style={{ background:'var(--bg)' }}>
       {/* Top bar */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
@@ -215,8 +188,8 @@ export default function AdminPage() {
             <ShieldCheck size={22} style={{ color: '#818cf8' }} />
           </div>
           <div>
-            <h1 className="text-xl font-black" style={{ color: '#f1f5f9' }}>Admin Dashboard</h1>
-            <p className="text-xs" style={{ color: '#475569' }}>{user?.email}</p>
+          <h1 style={{ fontSize:'1.25rem',fontWeight:900,color:'var(--ct1)',marginBottom:2 }}>Admin Dashboard</h1>
+          <p style={{ fontSize:'11px',color:'var(--ct3)',fontWeight:500 }}>{user?.email}</p>
           </div>
         </div>
         <button
@@ -246,16 +219,16 @@ export default function AdminPage() {
           className="input flex-1"
           style={{ background: 'rgba(15,23,42,0.5)', borderColor: 'rgba(99,102,241,0.15)', borderRadius: '14px' }}
         />
-        <span className="text-xs font-semibold px-3 py-2 rounded-xl" style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.15)' }}>
+        <span style={{ fontSize:'12px',fontWeight:700,padding:'6px 14px',borderRadius:10,background:'var(--sage-l)',color:'var(--sage)',border:'1px solid var(--sage-b)' }}>
           {filteredTeachers.length} Teachers
         </span>
       </div>
 
       {/* Teacher cards */}
       {loading ? (
-        <div className="text-center py-16 text-sm" style={{ color: '#475569' }}>Loading data…</div>
+        <div style={{ fontSize:'14px',textAlign:'center',padding:'4rem',color:'var(--ct3)' }}>Loading data…</div>
       ) : filteredTeachers.length === 0 ? (
-        <div className="text-center py-16 text-sm" style={{ color: '#475569' }}>No teachers found.</div>
+        <div style={{ fontSize:'14px',textAlign:'center',padding:'4rem',color:'var(--ct3)' }}>No teachers found.</div>
       ) : (
         <div className="space-y-3">
           {filteredTeachers.map(t => (

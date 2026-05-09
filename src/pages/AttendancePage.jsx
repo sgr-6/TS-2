@@ -9,304 +9,180 @@ export default function AttendancePage() {
   const [date, setDate] = useState(today);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-
-  const { students, loading: studentsLoading } = useStudents();
-  const { records, loading: recLoading } = useAttendanceForDate(date);
-
-  // Local override state: { [studentId]: 'present' | 'absent' }
+  const { students, loading: sL } = useStudents();
+  const { records, loading: rL } = useAttendanceForDate(date);
   const [overrides, setOverrides] = useState({});
   const [listening, setListening] = useState(false);
   const [voiceFeedback, setVoiceFeedback] = useState('');
 
-  // Voice Command Logic
   const toggleVoice = () => {
-    if (!('webkitSpeechRecognition' in window)) {
-      alert('Voice recognition not supported in this browser. Please use Chrome.');
-      return;
-    }
-    
-    if (listening) {
-      setListening(false);
-      return;
-    }
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
-
-    recognition.onstart = () => {
-      setListening(true);
-      setVoiceFeedback('Listening... Say "Mark [Name] present"');
-    };
-
-    recognition.onresult = (event) => {
-      const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
-      
+    if (!('webkitSpeechRecognition' in window)) { alert('Voice recognition requires Chrome.'); return; }
+    if (listening) { setListening(false); return; }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const rec = new SR();
+    rec.continuous = true; rec.interimResults = false; rec.lang = 'en-US';
+    rec.onstart = () => { setListening(true); setVoiceFeedback('Listening… Say "Mark [Name] present"'); };
+    rec.onresult = (e) => {
+      const t = e.results[e.results.length-1][0].transcript.toLowerCase();
       let matched = false;
-      students.forEach(student => {
-        const name = student.name.toLowerCase();
-        // check if name is in transcript
-        if (transcript.includes(name) || transcript.includes(name.split(' ')[0])) {
-          if (transcript.includes('present')) {
-            setOverrides(prev => ({ ...prev, [student.id]: 'present' }));
-            setVoiceFeedback(`Marked ${student.name} present`);
-            matched = true;
-          } else if (transcript.includes('absent')) {
-            setOverrides(prev => ({ ...prev, [student.id]: 'absent' }));
-            setVoiceFeedback(`Marked ${student.name} absent`);
-            matched = true;
-          }
+      students.forEach(s => {
+        const n = s.name.toLowerCase();
+        if (t.includes(n) || t.includes(n.split(' ')[0])) {
+          if (t.includes('present')) { setOverrides(p=>({...p,[s.id]:'present'})); setVoiceFeedback(`Marked ${s.name} present`); matched=true; }
+          else if (t.includes('absent')) { setOverrides(p=>({...p,[s.id]:'absent'})); setVoiceFeedback(`Marked ${s.name} absent`); matched=true; }
         }
       });
-
-      if (!matched && (transcript.includes('present') || transcript.includes('absent'))) {
-        setVoiceFeedback(`Didn't catch the name. Say again.`);
-      }
+      if (!matched) setVoiceFeedback("Didn't catch the name. Say again.");
       setSaved(false);
     };
-
-    recognition.onerror = () => {
-      setListening(false);
-      setVoiceFeedback('Voice recognition error.');
-    };
-
-    recognition.onend = () => {
-      setListening(false);
-      setTimeout(() => setVoiceFeedback(''), 3000);
-    };
-
-    recognition.start();
+    rec.onerror = () => { setListening(false); setVoiceFeedback('Error.'); };
+    rec.onend   = () => { setListening(false); setTimeout(()=>setVoiceFeedback(''),3000); };
+    rec.start();
   };
 
-  // Merge Firestore records with local overrides
   const statusMap = useMemo(() => {
-    const map = {};
-    records.forEach((r) => { map[r.studentId] = r.status; });
-    Object.entries(overrides).forEach(([id, status]) => { map[id] = status; });
-    return map;
+    const m = {};
+    records.forEach(r => { m[r.studentId] = r.status; });
+    Object.entries(overrides).forEach(([id,s]) => { m[id] = s; });
+    return m;
   }, [records, overrides]);
 
-  const isWeekend = useMemo(() => {
-    const d = new Date(date + 'T00:00:00');
-    const day = d.getDay();
-    return day === 0 || day === 6;
-  }, [date]);
+  const isWeekend = useMemo(() => { const d=new Date(date+'T00:00:00'); return d.getDay()===0||d.getDay()===6; }, [date]);
 
   function toggleStudent(id) {
-    if (records.some(r => r.studentId === id && r.status === 'absent')) return;
-    setOverrides((prev) => ({
-      ...prev,
-      [id]: (statusMap[id] || 'absent') === 'present' ? 'absent' : 'present',
-    }));
+    if (records.some(r=>r.studentId===id&&r.status==='absent')) return;
+    setOverrides(p=>({...p,[id]:(statusMap[id]||'absent')==='present'?'absent':'present'}));
     setSaved(false);
   }
-
   function markAll(status) {
-    const newOverrides = {};
-    students.forEach((s) => { 
-      const isSavedAbsent = records.some(r => r.studentId === s.id && r.status === 'absent');
-      if (status === 'present' && isSavedAbsent) {
-        // cannot override to present
-      } else {
-        newOverrides[s.id] = status; 
-      }
+    const o={};
+    students.forEach(s=>{
+      const saved=records.some(r=>r.studentId===s.id&&r.status==='absent');
+      if(status==='present'&&saved) return;
+      o[s.id]=status;
     });
-    setOverrides(newOverrides);
-    setSaved(false);
+    setOverrides(o); setSaved(false);
   }
-
   async function handleSave() {
-    if (!user) return;
-    setSaving(true);
+    if(!user) return; setSaving(true);
     try {
-      await Promise.all(
-        students.map((s) =>
-          saveAttendance(date, s.id, statusMap[s.id] || 'absent', user.uid)
-        )
-      );
-      setOverrides({});
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } finally {
-      setSaving(false);
-    }
+      await Promise.all(students.map(s=>saveAttendance(date,s.id,statusMap[s.id]||'absent',user.uid)));
+      setOverrides({}); setSaved(true); setTimeout(()=>setSaved(false),3000);
+    } finally { setSaving(false); }
   }
 
-  const presentCount = students.filter((s) => (statusMap[s.id] || 'absent') === 'present').length;
-  const loading = studentsLoading || recLoading;
+  const presentCount = students.filter(s=>(statusMap[s.id]||'absent')==='present').length;
+  const loading = sL||rL;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="page-wrap anim-in">
+      {/* Header */}
+      <div style={{ display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', gap:12 }}>
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#f1f5f9' }}>Mark Attendance</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#64748b' }}>
-            {presentCount}/{students.length} present
-          </p>
+          <h1 className="page-title">Mark Attendance</h1>
+          <p className="page-sub">{presentCount}/{students.length} present today</p>
         </div>
-        <button
-          id="save-attendance-btn"
-          className="btn btn-primary"
-          onClick={handleSave}
-          disabled={saving || students.length === 0 || isWeekend}
-        >
+        <button id="save-attendance-btn" className="btn btn-primary" onClick={handleSave}
+          disabled={saving||students.length===0||isWeekend} style={{ minHeight:42, borderRadius:12 }}>
           {saving ? (
-            <>
-              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full inline-block"
-                style={{ animation: 'spin 0.6s linear infinite' }} />
-              Saving…
-            </>
+            <><span style={{ width:14,height:14,border:'2px solid rgba(255,255,255,.3)',borderTopColor:'#fff',borderRadius:'50%',animation:'spin .6s linear infinite' }}/> Saving…</>
           ) : saved ? (
-            <><CheckCircle2 size={18} /> Saved!</>
+            <><CheckCircle2 size={16}/> Saved!</>
           ) : (
-            <><Save size={18} /> Save Attendance</>
+            <><Save size={16}/> Save Attendance</>
           )}
         </button>
       </div>
 
-      {/* Date Picker & Quick Actions */}
-      <div className="glass-card p-4 flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2 flex-1 min-w-48">
-          <CalendarDays size={18} style={{ color: '#6366f1', flexShrink: 0 }} />
-          <input
-            id="attendance-date-picker"
-            type="date"
-            className="input"
-            value={date}
-            max={today}
-            onChange={(e) => { setDate(e.target.value); setOverrides({}); setSaved(false); }}
-          />
+      {/* Controls */}
+      <div className="card" style={{ padding:'14px 18px', display:'flex', flexWrap:'wrap', alignItems:'center', gap:12 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8, flex:1, minWidth:200 }}>
+          <CalendarDays size={16} style={{ color:'var(--sage)', flexShrink:0 }}/>
+          <input id="attendance-date-picker" type="date" className="input" value={date} max={today}
+            onChange={e=>{ setDate(e.target.value); setOverrides({}); setSaved(false); }}
+            style={{ maxWidth:180 }}/>
         </div>
-        <div className="flex gap-2">
-          <button
-            className="btn btn-secondary flex items-center justify-center"
-            style={{ fontSize: '0.8rem', padding: '0.5rem 1rem', minHeight: '44px', background: listening ? 'rgba(239,68,68,0.2)' : undefined, color: listening ? '#f87171' : undefined }}
-            onClick={toggleVoice}
-            title="Voice Commands"
-          >
-            {listening ? <Mic size={15} className="animate-pulse" /> : <MicOff size={15} />}
-            <span className="hidden sm:inline ml-1">{listening ? 'Listening...' : 'Voice'}</span>
+        <div style={{ display:'flex', gap:8 }}>
+          <button className="btn btn-secondary" onClick={toggleVoice} title="Voice Commands"
+            style={{ fontSize:'12px', minHeight:38, background:listening?'var(--rose-l)':undefined, color:listening?'var(--rose)':undefined, borderColor:listening?'var(--rose-b)':undefined }}>
+            {listening?<Mic size={14} style={{ animation:'pulse 1s infinite' }}/>:<MicOff size={14}/>}
+            <span style={{ marginLeft:4 }}>{listening?'Listening…':'Voice'}</span>
           </button>
-          <button
-            id="mark-all-present-btn"
-            className="btn btn-success"
-            style={{ fontSize: '0.8rem', padding: '0.5rem 1rem', minHeight: '44px' }}
-            onClick={() => markAll('present')}
-            disabled={students.length === 0 || isWeekend}
-          >
-            <CheckCircle2 size={15} /> All Present
+          <button id="mark-all-present-btn" className="btn btn-success" onClick={()=>markAll('present')}
+            disabled={students.length===0||isWeekend} style={{ fontSize:'12px', minHeight:38 }}>
+            <CheckCircle2 size={14}/> All Present
           </button>
-          <button
-            id="mark-all-absent-btn"
-            className="btn btn-danger"
-            style={{ fontSize: '0.8rem', padding: '0.5rem 1rem', minHeight: '44px' }}
-            onClick={() => markAll('absent')}
-            disabled={students.length === 0 || isWeekend}
-          >
-            <XCircle size={15} /> All Absent
+          <button id="mark-all-absent-btn" className="btn btn-danger" onClick={()=>markAll('absent')}
+            disabled={students.length===0||isWeekend} style={{ fontSize:'12px', minHeight:38 }}>
+            <XCircle size={14}/> All Absent
           </button>
         </div>
       </div>
-      
+
       {voiceFeedback && (
-        <div className="text-sm font-medium text-center py-2 px-4 rounded-full mx-auto w-fit transition-all" style={{ background: 'rgba(99,102,241,0.1)', color: '#a5b4fc' }}>
+        <div style={{ textAlign:'center', padding:'8px 20px', borderRadius:99, background:'var(--mauve-l)', border:'1px solid var(--mauve-b)', fontSize:'12px', fontWeight:600, color:'var(--mauve)', width:'fit-content', margin:'0 auto' }}>
           {voiceFeedback}
         </div>
       )}
 
-      {/* Attendance Progress Bar */}
+      {/* Progress */}
       {students.length > 0 && (
-        <div className="glass-card p-4">
-          <div className="flex justify-between text-xs mb-2" style={{ color: '#64748b' }}>
+        <div className="card" style={{ padding:'14px 18px' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', fontSize:'12px', fontWeight:600, color:'var(--ct3)', marginBottom:8 }}>
             <span>Attendance Progress</span>
-            <span>{((presentCount / students.length) * 100).toFixed(0)}%</span>
+            <span style={{ color:'var(--ct1)', fontWeight:700 }}>{students.length>0?((presentCount/students.length)*100).toFixed(0):0}%</span>
           </div>
-          <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: '#1e293b' }}>
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${(presentCount / students.length) * 100}%`,
-                background: 'linear-gradient(90deg, #4f46e5, #818cf8)',
-              }}
-            />
+          <div className="pbar-track">
+            <div className="pbar-fill" style={{ width:`${students.length>0?(presentCount/students.length)*100:0}%`, background:'var(--sage)' }}/>
           </div>
         </div>
       )}
 
-      {/* Student Toggle List */}
+      {/* List */}
       {isWeekend ? (
-        <div className="glass-card p-12 text-center text-sm" style={{ color: '#475569' }}>
-          No attendance can be marked on Saturday and Sunday. College works from Monday to Friday.
+        <div className="card" style={{ padding:'3rem', textAlign:'center', fontSize:'14px', color:'var(--ct3)', fontWeight:500 }}>
+          🎉 No attendance on weekends — college is closed Saturday & Sunday.
         </div>
       ) : loading ? (
-        <div className="glass-card p-8 text-center text-sm" style={{ color: '#475569' }}>Loading…</div>
+        <div className="card" style={{ padding:'3rem', textAlign:'center', fontSize:'14px', color:'var(--ct3)' }}>Loading…</div>
       ) : students.length === 0 ? (
-        <div className="glass-card p-12 text-center text-sm" style={{ color: '#475569' }}>
-          No students found. Add students first.
+        <div className="card" style={{ padding:'3rem', textAlign:'center', fontSize:'14px', color:'var(--ct3)', fontWeight:500 }}>
+          No students yet. Go to Students → Add Student.
         </div>
       ) : (
-        <div className="space-y-2">
-          {students.map((s, idx) => {
-            const isPresent = (statusMap[s.id] || 'absent') === 'present';
-            const isSavedAbsent = records.some(r => r.studentId === s.id && r.status === 'absent');
-
+        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+          {students.map((s, i) => {
+            const isPresent = (statusMap[s.id]||'absent') === 'present';
+            const savedAbsent = records.some(r=>r.studentId===s.id&&r.status==='absent');
+            const col = isPresent ? 'var(--sage)' : 'var(--ct4)';
             return (
-              <div
-                key={s.id}
-                className={`glass-card p-4 flex items-center justify-between gap-4 transition-all duration-200 ${!isSavedAbsent ? 'cursor-pointer' : ''}`}
+              <div key={s.id} className="card" onClick={()=>{ if(!savedAbsent) toggleStudent(s.id); }}
                 style={{
-                  animationDelay: `${idx * 0.03}s`,
-                  borderColor: isPresent ? 'rgba(16,185,129,0.2)' : 'rgba(99,102,241,0.08)',
-                  background: isPresent ? 'rgba(16,185,129,0.05)' : 'rgba(30,41,59,0.5)',
-                  opacity: isSavedAbsent ? 0.8 : 1,
-                }}
-                onClick={() => { if (!isSavedAbsent) toggleStudent(s.id); }}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
-                    style={{
-                      background: isPresent
-                        ? 'rgba(16,185,129,0.15)'
-                        : 'rgba(99,102,241,0.1)',
-                      color: isPresent ? '#34d399' : '#818cf8',
-                    }}
-                  >
-                    {s.name.charAt(0).toUpperCase()}
+                  padding:'14px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12,
+                  cursor: savedAbsent ? 'not-allowed' : 'pointer',
+                  borderColor: isPresent ? 'var(--sage-b)' : 'var(--c-edge)',
+                  background: isPresent ? 'var(--sage-l)' : 'var(--card)',
+                  opacity: savedAbsent ? 0.75 : 1,
+                  animationDelay:`${i*0.02}s`,
+                }}>
+                <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                  <div style={{ width:38,height:38,borderRadius:10,flexShrink:0, background:`${isPresent?'var(--sage-l)':'var(--card2)'}`, border:`1px solid ${isPresent?'var(--sage-b)':'var(--c-edge)'}`, display:'flex',alignItems:'center',justifyContent:'center', fontSize:'13px',fontWeight:800,color:col }}>
+                    {s.name[0].toUpperCase()}
                   </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-sm truncate" style={{ color: '#e2e8f0' }}>{s.name}</p>
-                    <p className="text-xs" style={{ color: '#64748b' }}>
-                      {s.rollNo} · {s.class}
-                    </p>
+                  <div>
+                    <p style={{ fontSize:'14px', fontWeight:700, color:'var(--ct1)' }}>{s.name}</p>
+                    <p style={{ fontSize:'11px', color:'var(--ct3)', fontWeight:500 }}>{s.rollNo} · {s.class}</p>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <span
-                    className="badge hidden sm:inline-flex"
-                    style={{
-                      background: isPresent ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.1)',
-                      color: isPresent ? '#34d399' : '#f87171',
-                    }}
-                  >
-                    {isPresent ? 'Present' : 'Absent'}
+                <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
+                  <span className="badge" style={{ background:isPresent?'var(--sage-l)':'var(--rose-l)', color:isPresent?'var(--sage)':'var(--rose)', border:`1px solid ${isPresent?'var(--sage-b)':'var(--rose-b)'}` }}>
+                    {isPresent?'Present':'Absent'}
                   </span>
-                  
-                  {isSavedAbsent ? (
-                    <div className="text-xs font-semibold px-2 py-1 rounded" style={{ color: '#f87171', background: 'rgba(239,68,68,0.1)' }}>
-                      Saved Absent
-                    </div>
+                  {savedAbsent ? (
+                    <span style={{ fontSize:'11px',fontWeight:700,color:'var(--rose)',background:'var(--rose-l)',padding:'4px 10px',borderRadius:99,border:'1px solid var(--rose-b)' }}>Saved Absent</span>
                   ) : (
-                    <button
-                      className={`toggle ${isPresent ? 'active' : ''}`}
-                      role="switch"
-                      aria-checked={isPresent}
-                      aria-label={`Toggle attendance for ${s.name}`}
-                      onClick={(e) => { e.stopPropagation(); toggleStudent(s.id); }}
-                    />
+                    <button className={`toggle ${isPresent?'active':''}`} role="switch" aria-checked={isPresent}
+                      aria-label={`Toggle ${s.name}`} onClick={e=>{e.stopPropagation();toggleStudent(s.id);}}/>
                   )}
                 </div>
               </div>
@@ -316,14 +192,11 @@ export default function AttendancePage() {
       )}
 
       {saved && (
-        <div
-          className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-2xl text-sm font-medium flex items-center gap-2 animate-scale-in"
-          style={{ background: 'rgba(16,185,129,0.9)', color: 'white', backdropFilter: 'blur(8px)', zIndex: 40, boxShadow: '0 4px 20px rgba(16,185,129,0.3)' }}
-        >
-          <CheckCircle2 size={18} /> Attendance saved successfully!
+        <div style={{ position:'fixed',bottom:'1.5rem',left:'50%',transform:'translateX(-50%)', padding:'12px 24px',borderRadius:16,background:'var(--sage)',color:'#fff',fontWeight:700,fontSize:'13px', display:'flex',alignItems:'center',gap:8,boxShadow:'0 4px 20px var(--sage-b)',zIndex:40 }}>
+          <CheckCircle2 size={16}/> Attendance saved!
         </div>
       )}
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
     </div>
   );
 }
