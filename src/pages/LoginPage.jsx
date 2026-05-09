@@ -4,227 +4,241 @@ import { GraduationCap, Mail, Lock, Eye, EyeOff, User, BookOpen, Hash, Building2
 
 const SEMS = ['1st Sem','2nd Sem','3rd Sem','4th Sem','5th Sem','6th Sem','7th Sem','8th Sem'];
 
-const Field = ({ label, icon: Icon, children }) => (
-  <div>
-    <label style={{ display:'block', fontSize:'11px', fontWeight:700, textTransform:'uppercase', letterSpacing:'.06em', color:'var(--ink3)', marginBottom:6 }}>
-      {label}
-    </label>
-    <div style={{ position:'relative' }}>
-      {Icon && <Icon size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'var(--p)', pointerEvents:'none' }} />}
-      {React.cloneElement(children, { style: { ...children.props.style, paddingLeft: Icon ? '2.25rem' : '1rem' } })}
-    </div>
-  </div>
-);
-
 export default function LoginPage() {
   const { login, register } = useAuth();
-  const [mode, setMode] = useState('login'); // login | register | admin
+  const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [teacherName, setTeacherName] = useState('');
-  const [department, setDepartment] = useState('');
-  const [subjectName, setSubjectName] = useState('');
-  const [subjectCode, setSubjectCode] = useState('');
+  const [dept, setDept] = useState('');
+  const [subName, setSubName] = useState('');
+  const [subCode, setSubCode] = useState('');
   const [semester, setSemester] = useState('4th Sem');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e) {
+  async function submit(e) {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
       if (mode === 'register') {
-        if (!teacherName || !department || !subjectName || !subjectCode) { setError('All fields are required.'); return; }
-        await register(email, pass, { teacherName, department, subjectName, subjectCode, semester });
+        if (!teacherName||!dept||!subName||!subCode) { setError('All fields are required.'); return; }
+        await register(email, pass, { teacherName, department:dept, subjectName:subName, subjectCode:subCode, semester });
       } else {
         await login(email, pass);
       }
-    } catch (err) {
+    } catch(err) {
       setError(
-        err.code === 'auth/invalid-credential' ? 'Invalid email or password.' :
-        err.code === 'auth/email-already-in-use' ? 'Email already registered.' :
-        err.code === 'auth/weak-password' ? 'Password must be at least 6 characters.' :
+        err.code==='auth/invalid-credential' ? 'Invalid email or password.' :
+        err.code==='auth/email-already-in-use' ? 'This email is already registered.' :
+        err.code==='auth/weak-password' ? 'Password must be at least 6 characters.' :
         err.message
       );
     } finally { setLoading(false); }
   }
 
-  const tabs = [
-    { key:'login',    label:'Login'    },
-    { key:'register', label:'Register' },
-    { key:'admin',    label:'🔐 Admin' },
-  ];
-
   return (
     <div style={{
-      minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center',
-      padding:'1.5rem',
-      background: 'radial-gradient(ellipse 90% 50% at 50% -10%,rgba(124,111,255,.22) 0%,transparent 60%), radial-gradient(ellipse at 95% 90%,rgba(63,169,255,.12) 0%,transparent 40%), var(--bg0)',
+      minHeight:'100vh', display:'flex',
+      background:'var(--bg)',
       position:'relative', overflow:'hidden',
     }}>
-      {/* Aurora orbs */}
-      {[
-        { top:'-8rem', left:'-8rem', size:'28rem', color:'rgba(124,111,255,.12)' },
-        { bottom:'-6rem', right:'-6rem', size:'24rem', color:'rgba(63,169,255,.10)' },
-        { top:'40%', left:'45%', size:'16rem', color:'rgba(207,123,255,.08)' },
-      ].map((o,i) => (
-        <div key={i} style={{
-          position:'fixed', borderRadius:'50%',
-          width:o.size, height:o.size,
-          top:o.top, bottom:o.bottom, left:o.left, right:o.right,
-          background:`radial-gradient(circle,${o.color},transparent)`,
-          filter:'blur(60px)', pointerEvents:'none',
-        }} />
-      ))}
+      {/* Left panel — big visual */}
+      <div style={{
+        display:'none', flex:'0 0 48%', position:'relative', overflow:'hidden',
+        background:'linear-gradient(145deg,#0D0B2A 0%,#1A0A3E 40%,#0A1A40 100%)',
+      }} id="left-panel">
+        {/* Colorful blobs */}
+        {[
+          {top:'5%',left:'10%',size:280,color:'rgba(139,92,246,.22)'},
+          {top:'55%',left:'55%',size:220,color:'rgba(59,130,246,.18)'},
+          {top:'30%',left:'30%',size:160,color:'rgba(6,182,212,.14)'},
+          {top:'75%',left:'5%', size:180,color:'rgba(16,185,129,.14)'},
+          {top:'10%',left:'60%',size:130,color:'rgba(236,72,153,.12)'},
+        ].map((b,i)=>(
+          <div key={i} style={{
+            position:'absolute', borderRadius:'50%',
+            top:b.top, left:b.left,
+            width:b.size, height:b.size,
+            background:`radial-gradient(circle,${b.color},transparent)`,
+            filter:'blur(40px)', pointerEvents:'none',
+          }}/>
+        ))}
 
-      <div style={{ width:'100%', maxWidth:420, position:'relative', zIndex:1 }} className="animate-scale-in">
-
-        {/* Brand */}
-        <div style={{ textAlign:'center', marginBottom:'2rem' }}>
-          <div style={{
-            width:72, height:72, borderRadius:20, margin:'0 auto 1rem',
-            background:'var(--g-hero)',
-            display:'flex', alignItems:'center', justifyContent:'center',
-            boxShadow:'0 8px 32px var(--pglow)',
-          }}>
-            <GraduationCap size={34} color="#fff" />
+        <div style={{ position:'relative', zIndex:1, padding:'3rem', height:'100%', display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ width:36,height:36,borderRadius:10,background:'linear-gradient(135deg,#8B5CF6,#3B82F6)',display:'flex',alignItems:'center',justifyContent:'center', boxShadow:'0 4px 14px rgba(139,92,246,.5)' }}>
+              <GraduationCap size={20} color="#fff"/>
+            </div>
+            <span style={{ fontWeight:900, fontSize:'16px', color:'#fff', letterSpacing:'-.02em' }}>TS:2</span>
           </div>
-          <h1 style={{ fontSize:'2.2rem', fontWeight:900, letterSpacing:'-.04em', lineHeight:1 }} className="aurora-text">TS:2</h1>
-          <p style={{ fontSize:'13px', color:'var(--ink3)', marginTop:6, fontWeight:500 }}>Smart Presence Simplified</p>
-        </div>
 
-        {/* Tab switcher */}
-        <div style={{
-          display:'flex', padding:4,
-          background:'var(--surface)', backdropFilter:'blur(16px)',
-          border:'1px solid var(--edge)', borderRadius:14,
-          marginBottom:'1.5rem',
-        }}>
-          {tabs.map(t => (
-            <button key={t.key} type="button" onClick={() => { setMode(t.key); setError(''); }}
-              style={{
-                flex:1, padding:'9px 0', borderRadius:10, border:'none', cursor:'pointer',
-                fontSize:'12px', fontWeight:700, transition:'all .2s',
-                background: mode===t.key ? 'var(--g-hero)' : 'transparent',
-                color: mode===t.key ? '#fff' : 'var(--ink3)',
-                boxShadow: mode===t.key ? '0 4px 14px var(--pglow)' : 'none',
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Card */}
-        <div style={{
-          background:'var(--surface)', backdropFilter:'blur(28px) saturate(200%)',
-          WebkitBackdropFilter:'blur(28px) saturate(200%)',
-          border:'1px solid var(--edge)', borderRadius:24,
-          padding:'1.75rem',
-          boxShadow:'0 24px 60px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06)',
-        }}>
-
-          {/* Admin notice */}
-          {mode === 'admin' && (
+          <div>
             <div style={{
-              display:'flex', alignItems:'center', gap:8,
-              padding:'10px 14px', borderRadius:12, marginBottom:18,
-              background:'var(--psub)', border:'1px solid rgba(124,111,255,.2)',
+              display:'inline-flex', alignItems:'center', gap:6, padding:'6px 14px',
+              borderRadius:99, marginBottom:'1.5rem',
+              background:'rgba(139,92,246,.15)', border:'1px solid rgba(139,92,246,.3)',
             }}>
-              <ShieldCheck size={15} style={{ color:'var(--p)', flexShrink:0 }} />
-              <span style={{ fontSize:'12px', color:'var(--p2)', fontWeight:600 }}>Admin access — Principals &amp; HODs only</span>
+              <div style={{ width:6,height:6,borderRadius:'50%',background:'#8B5CF6' }}/>
+              <span style={{ fontSize:'11px', fontWeight:700, color:'#A78BFA', letterSpacing:'.06em', textTransform:'uppercase' }}>Smart Attendance Platform</span>
+            </div>
+            <h1 style={{ fontSize:'2.8rem', fontWeight:900, color:'#fff', lineHeight:1.1, letterSpacing:'-.04em', marginBottom:'1rem' }}>
+              Track every<br/>
+              <span className="g-text">presence</span><br/>
+              effortlessly.
+            </h1>
+            <p style={{ fontSize:'15px', color:'rgba(255,255,255,.5)', lineHeight:1.65, maxWidth:380 }}>
+              Real-time attendance tracking, smart insights, QR check-ins and powerful reports — all in one place.
+            </p>
+          </div>
+
+          {/* Feature pills */}
+          <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+            {[
+              ['#8B5CF6','QR Check-in'],['#10B981','Smart Insights'],
+              ['#3B82F6','Geo Fencing'],['#F59E0B','Streak Tracking'],
+              ['#EC4899','PDF Reports'],
+            ].map(([c,l])=>(
+              <span key={l} style={{
+                padding:'5px 12px', borderRadius:99, fontSize:'11px', fontWeight:700,
+                background:`${c}15`, border:`1px solid ${c}30`, color:c,
+              }}>{l}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Right panel — form */}
+      <div style={{
+        flex:1, display:'flex', alignItems:'center', justifyContent:'center',
+        padding:'2rem 1.5rem', overflowY:'auto',
+      }}>
+        <div style={{ width:'100%', maxWidth:400 }} className="anim-scale">
+
+          {/* Mobile brand */}
+          <div id="mob-brand" style={{ textAlign:'center', marginBottom:'2rem' }}>
+            <div style={{ width:56,height:56,borderRadius:14,background:'linear-gradient(135deg,#8B5CF6,#3B82F6)',display:'inline-flex',alignItems:'center',justifyContent:'center',marginBottom:12,boxShadow:'0 6px 20px rgba(139,92,246,.4)' }}>
+              <GraduationCap size={26} color="#fff"/>
+            </div>
+            <h1 className="g-text" style={{ fontSize:'1.8rem', fontWeight:900, letterSpacing:'-.04em' }}>TS:2</h1>
+            <p style={{ fontSize:'13px', color:'var(--t3)', marginTop:4, fontWeight:500 }}>Smart Presence Simplified</p>
+          </div>
+
+          <h2 style={{ fontSize:'1.35rem', fontWeight:800, color:'var(--t1)', letterSpacing:'-.02em', marginBottom:4 }}>
+            {mode==='admin'?'Admin Portal':mode==='register'?'Create Account':'Welcome back'}
+          </h2>
+          <p style={{ fontSize:'13px', color:'var(--t3)', marginBottom:'1.5rem' }}>
+            {mode==='admin'?'Principals & HODs access':mode==='register'?'Register your subject & profile':'Sign in to your dashboard'}
+          </p>
+
+          {/* Tabs */}
+          <div style={{
+            display:'flex', padding:3, borderRadius:11, marginBottom:'1.25rem',
+            background:'var(--surface)', border:'1px solid var(--border)',
+          }}>
+            {[['login','Login'],['register','Register'],['admin','🔐 Admin']].map(([k,l])=>(
+              <button key={k} type="button" onClick={()=>{setMode(k);setError('');}}
+                style={{
+                  flex:1, padding:'8px 0', borderRadius:8, border:'none', cursor:'pointer',
+                  fontSize:'12px', fontWeight:700, transition:'all .18s',
+                  background:mode===k?'linear-gradient(135deg,#8B5CF6,#6366F1)':'transparent',
+                  color:mode===k?'#fff':'var(--t3)',
+                  boxShadow:mode===k?'0 2px 10px rgba(139,92,246,.35)':'none',
+                }}>{l}
+              </button>
+            ))}
+          </div>
+
+          {mode==='admin' && (
+            <div style={{ display:'flex',alignItems:'center',gap:8,padding:'10px 14px',borderRadius:10,marginBottom:16,background:'rgba(139,92,246,.08)',border:'1px solid rgba(139,92,246,.2)' }}>
+              <ShieldCheck size={14} style={{color:'#8B5CF6',flexShrink:0}}/>
+              <span style={{fontSize:'12px',color:'#A78BFA',fontWeight:600}}>Admin credentials required</span>
             </div>
           )}
 
-          <h2 style={{ fontSize:'1.15rem', fontWeight:800, color:'var(--ink1)', marginBottom:4 }}>
-            {mode==='admin' ? 'Admin Portal' : mode==='register' ? 'Create Account' : 'Welcome Back'}
-          </h2>
-          <p style={{ fontSize:'12px', color:'var(--ink3)', marginBottom:'1.25rem' }}>
-            {mode==='admin' ? 'Sign in with your admin credentials' :
-             mode==='register' ? 'Register your subject & teaching profile' :
-             'Sign in to your attendance dashboard'}
-          </p>
-
           {error && (
-            <div style={{
-              padding:'10px 14px', borderRadius:12, marginBottom:16,
-              background:'rgba(255,95,126,.10)', color:'var(--ruby)',
-              border:'1px solid rgba(255,95,126,.25)', fontSize:'13px', fontWeight:600,
-            }}>⚠ {error}</div>
+            <div style={{ padding:'10px 14px',borderRadius:10,marginBottom:14,background:'rgba(244,63,94,.08)',color:'#F43F5E',border:'1px solid rgba(244,63,94,.2)',fontSize:'13px',fontWeight:600 }}>
+              ⚠ {error}
+            </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:14 }}>
-            {mode==='register' && (
-              <Field label="Your Name" icon={User}>
-                <input className="input" type="text" placeholder="e.g. Supriya" value={teacherName} onChange={e=>setTeacherName(e.target.value)} required />
-              </Field>
-            )}
+          <form onSubmit={submit} style={{ display:'flex', flexDirection:'column', gap:13 }}>
+            {mode==='register' && <FormField label="Your Name" icon={User}><input className="input" type="text" placeholder="e.g. Supriya" value={teacherName} onChange={e=>setTeacherName(e.target.value)} required/></FormField>}
 
-            <Field label="Email" icon={Mail}>
-              <input className="input" type="email" placeholder={mode==='admin' ? 'admin@ts2.edu' : 'teacher@college.edu'}
-                value={email} onChange={e=>setEmail(e.target.value)} required autoComplete="email" />
-            </Field>
+            <FormField label="Email" icon={Mail}>
+              <input className="input" type="email" placeholder={mode==='admin'?'admin@ts2.edu':'teacher@college.edu'} value={email} onChange={e=>setEmail(e.target.value)} required autoComplete="email"/>
+            </FormField>
 
-            <Field label="Password" icon={Lock}>
-              <div style={{ position:'relative' }}>
-                <input className="input" type={showPass ? 'text' : 'password'} placeholder="••••••••"
+            <div>
+              <label style={{display:'block',fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.06em',color:'var(--t3)',marginBottom:6}}>Password</label>
+              <div style={{position:'relative'}}>
+                <Lock size={14} style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--t4)',pointerEvents:'none'}}/>
+                <input className="input" type={showPass?'text':'password'} placeholder="••••••••"
                   value={pass} onChange={e=>setPass(e.target.value)} required
-                  style={{ paddingLeft:'2.25rem', paddingRight:'2.5rem' }} />
-                <Lock size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'var(--p)', pointerEvents:'none' }} />
-                <button type="button" onClick={()=>setShowPass(v=>!v)}
-                  style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--ink3)' }}>
-                  {showPass ? <EyeOff size={15}/> : <Eye size={15}/>}
+                  style={{paddingLeft:'2.1rem',paddingRight:'2.5rem'}} autoComplete={mode==='register'?'new-password':'current-password'}/>
+                <button type="button" onClick={()=>setShowPass(v=>!v)} style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--t3)',display:'flex'}}>
+                  {showPass?<EyeOff size={14}/>:<Eye size={14}/>}
                 </button>
               </div>
-            </Field>
+            </div>
 
             {mode==='register' && <>
-              <Field label="Department" icon={Building2}>
-                <input className="input" type="text" placeholder="e.g. Mathematics, CSE" value={department} onChange={e=>setDepartment(e.target.value)} required />
-              </Field>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                <Field label="Subject" icon={BookOpen}>
-                  <input className="input" type="text" placeholder="e.g. Maths" value={subjectName} onChange={e=>setSubjectName(e.target.value)} required />
-                </Field>
-                <Field label="Code" icon={Hash}>
-                  <input className="input" type="text" placeholder="e.g. 23IST420" value={subjectCode} onChange={e=>setSubjectCode(e.target.value)} required />
-                </Field>
+              <FormField label="Department" icon={Building2}><input className="input" type="text" placeholder="e.g. Mathematics, CSE" value={dept} onChange={e=>setDept(e.target.value)} required/></FormField>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                <FormField label="Subject" icon={BookOpen}><input className="input" type="text" placeholder="e.g. Maths" value={subName} onChange={e=>setSubName(e.target.value)} required/></FormField>
+                <FormField label="Code" icon={Hash}><input className="input" type="text" placeholder="e.g. 23IST420" value={subCode} onChange={e=>setSubCode(e.target.value)} required/></FormField>
               </div>
               <div>
-                <label style={{ display:'block', fontSize:'11px', fontWeight:700, textTransform:'uppercase', letterSpacing:'.06em', color:'var(--ink3)', marginBottom:6 }}>Semester</label>
-                <select className="input" value={semester} onChange={e=>setSemester(e.target.value)} style={{ appearance:'none' }}>
-                  {SEMS.map(s => <option key={s} value={s}>{s}</option>)}
+                <label style={{display:'block',fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.06em',color:'var(--t3)',marginBottom:6}}>Semester</label>
+                <select className="input" value={semester} onChange={e=>setSemester(e.target.value)} style={{appearance:'none'}}>
+                  {SEMS.map(s=><option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
             </>}
 
             <button id="login-submit-btn" type="submit" className="btn btn-primary" disabled={loading}
-              style={{ marginTop:4, minHeight:48, borderRadius:14, fontSize:'14px', fontWeight:700 }}>
-              {loading ? (
-                <span style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <span style={{ width:16, height:16, border:'2px solid rgba(255,255,255,.3)', borderTopColor:'#fff', borderRadius:'50%', animation:'spin .6s linear infinite' }} />
-                  {mode==='register' ? 'Creating…' : 'Signing in…'}
+              style={{marginTop:6,minHeight:44,borderRadius:11,fontSize:'14px',fontWeight:700}}>
+              {loading?(
+                <span style={{display:'flex',alignItems:'center',gap:8}}>
+                  <span style={{width:15,height:15,border:'2px solid rgba(255,255,255,.3)',borderTopColor:'#fff',borderRadius:'50%',animation:'spin .6s linear infinite'}}/>
+                  {mode==='register'?'Creating account…':'Signing in…'}
                 </span>
-              ) : mode==='admin' ? '🔐 Admin Sign In' : mode==='register' ? 'Create Account' : 'Sign In'}
+              ):mode==='admin'?'🔐 Admin Sign In':mode==='register'?'Create Account →':'Sign In →'}
             </button>
           </form>
 
-          {mode !== 'admin' && (
-            <p style={{ textAlign:'center', fontSize:'12px', color:'var(--ink3)', marginTop:16 }}>
-              {mode==='register' ? 'Already have an account? ' : "Don't have an account? "}
-              <button type="button" onClick={()=>{ setMode(mode==='register' ? 'login' : 'register'); setError(''); }}
-                style={{ color:'var(--p2)', background:'none', border:'none', cursor:'pointer', fontWeight:700, fontSize:'12px' }}>
-                {mode==='register' ? 'Sign In' : 'Register'}
+          {mode!=='admin' && (
+            <p style={{textAlign:'center',fontSize:'12px',color:'var(--t3)',marginTop:16}}>
+              {mode==='register'?'Already have an account? ':'No account yet? '}
+              <button type="button" onClick={()=>{setMode(mode==='register'?'login':'register');setError('');}}
+                style={{color:'var(--primary)',background:'none',border:'none',cursor:'pointer',fontWeight:700,fontSize:'12px'}}>
+                {mode==='register'?'Sign In':'Register free'}
               </button>
             </p>
           )}
         </div>
-
-        <p style={{ textAlign:'center', fontSize:'11px', color:'var(--ink4)', marginTop:20 }}>© 2025 TS:2 · Powered by Firebase</p>
       </div>
 
-      <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
+      <style>{`
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @media(min-width:900px){
+          #left-panel{display:flex!important}
+          #mob-brand{display:none!important}
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function FormField({ label, icon: Icon, children }) {
+  return (
+    <div>
+      <label style={{display:'block',fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.06em',color:'var(--t3)',marginBottom:6}}>{label}</label>
+      <div style={{position:'relative'}}>
+        {Icon && <Icon size={14} style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--t4)',pointerEvents:'none'}}/>}
+        {React.cloneElement(children,{style:{...(children.props.style||{}),paddingLeft:Icon?'2.1rem':'1rem'}})}
+      </div>
     </div>
   );
 }
