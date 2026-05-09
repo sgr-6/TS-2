@@ -8,22 +8,19 @@ import {
 
 function StatCard({ icon: Icon, label, value, sub, color }) {
   return (
-    <div
-      className="glass-card stat-card p-5 flex gap-4 items-start"
-      style={{ animationDelay: '0.05s' }}
-    >
+    <div className="glass-card stat-card p-5 flex gap-4 items-start" style={{ animationDelay: '0.05s' }}>
       <div
         className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{ background: `${color}20` }}
+        style={{ background: `${color}18`, border: `1px solid ${color}30` }}
       >
         <Icon size={22} style={{ color }} />
       </div>
       <div>
-        <p className="text-xs font-medium uppercase tracking-wider mb-0.5" style={{ color: '#64748b' }}>
+        <p className="text-xs font-bold uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-3)' }}>
           {label}
         </p>
-        <p className="text-2xl font-bold" style={{ color: '#f1f5f9' }}>{value}</p>
-        {sub && <p className="text-xs mt-0.5" style={{ color: '#475569' }}>{sub}</p>}
+        <p className="text-2xl font-black" style={{ color: 'var(--text-1)' }}>{value}</p>
+        {sub && <p className="text-xs mt-0.5 font-medium" style={{ color: 'var(--text-4)' }}>{sub}</p>}
       </div>
     </div>
   );
