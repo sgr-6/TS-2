@@ -59,7 +59,7 @@ function NavItem({ item, collapsed, onClick }) {
 }
 
 export default function Layout({ children }) {
-  const { user, logout } = useAuth();
+  const { user, userProfile, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -121,18 +121,27 @@ export default function Layout({ children }) {
         {/* User + Logout */}
         <div className="p-3 border-t" style={{ borderColor: 'rgba(99,102,241,0.08)' }}>
           {!sidebarCollapsed && (
-            <div className="flex items-center gap-2 px-3 py-2 mb-2">
+            <div className="flex items-start gap-2 px-3 py-2 mb-2">
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5"
                 style={{ background: 'linear-gradient(135deg, #4f46e5, #818cf8)', color: 'white' }}
               >
                 {user?.email?.[0]?.toUpperCase() || 'A'}
               </div>
               <div className="overflow-hidden">
-                <p className="text-xs font-medium truncate" style={{ color: '#e2e8f0' }}>
-                  {user?.email}
+                <p className="text-xs font-bold truncate" style={{ color: '#e2e8f0' }}>
+                  {userProfile?.teacherName || user?.email}
                 </p>
-                <p className="text-xs" style={{ color: '#475569' }}>Administrator</p>
+                {userProfile?.subjectName && (
+                  <p className="text-[10px] truncate" style={{ color: '#6366f1' }}>
+                    {userProfile.subjectName} · {userProfile.semester || ''}
+                  </p>
+                )}
+                {userProfile?.department && (
+                  <p className="text-[10px] truncate" style={{ color: '#475569' }}>
+                    {userProfile.department}
+                  </p>
+                )}
               </div>
             </div>
           )}

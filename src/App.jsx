@@ -10,6 +10,8 @@ import ReportsPage from './pages/ReportsPage';
 import InsightsPage from './pages/InsightsPage';
 import QRCheckInPage from './pages/QRCheckInPage';
 import GeofencePage from './pages/GeofencePage';
+import AdminPage from './pages/AdminPage';
+
 function PrivateRoute({ children }) {
   const { user } = useAuth();
   return user ? children : <Navigate to="/login" replace />;
@@ -21,6 +23,8 @@ function PublicRoute({ children }) {
 }
 
 export default function App() {
+  const { user, isAdmin } = useAuth();
+
   return (
     <Routes>
       <Route
@@ -35,18 +39,24 @@ export default function App() {
         path="/*"
         element={
           <PrivateRoute>
-            <Layout>
+            {isAdmin ? (
               <Routes>
-                <Route path="/" element={<DashboardPage />} />
-                <Route path="/students" element={<StudentsPage />} />
-                <Route path="/attendance" element={<AttendancePage />} />
-                <Route path="/reports" element={<ReportsPage />} />
-                <Route path="/insights" element={<InsightsPage />} />
-                <Route path="/qr-checkin" element={<QRCheckInPage />} />
-                <Route path="/geofence" element={<GeofencePage />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
+                <Route path="/*" element={<AdminPage />} />
               </Routes>
-            </Layout>
+            ) : (
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<DashboardPage />} />
+                  <Route path="/students" element={<StudentsPage />} />
+                  <Route path="/attendance" element={<AttendancePage />} />
+                  <Route path="/reports" element={<ReportsPage />} />
+                  <Route path="/insights" element={<InsightsPage />} />
+                  <Route path="/qr-checkin" element={<QRCheckInPage />} />
+                  <Route path="/geofence" element={<GeofencePage />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Layout>
+            )}
           </PrivateRoute>
         }
       />

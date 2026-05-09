@@ -10,11 +10,12 @@ import {
   where,
   getDocs,
   serverTimestamp,
+  orderBy,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 
-/* ── Real-time students ── */
+/* ── Real-time students (filtered by current teacher) ── */
 export function useStudents() {
   const { user } = useAuth();
   const [students, setStudents] = useState([]);
@@ -25,7 +26,6 @@ export function useStudents() {
     const q = query(collection(db, 'students'), where('userId', '==', user.uid));
     const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      // Sort client-side to avoid Firestore index requirements
       data.sort((a, b) => a.name.localeCompare(b.name));
       setStudents(data);
       setLoading(false);
@@ -43,7 +43,42 @@ export function useStudents() {
   return { students, loading, addStudent, updateStudent, deleteStudent };
 }
 
-/* ── Real-time attendance for a specific date ── */
+/* ── All students (admin only) ── */
+export function useAllStudents() {
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'students'), (snap) => {
+      const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      data.sort((a, b) => a.name.localeCompare(b.name));
+      setStudents(data);
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  return { students, loading };
+}
+
+/* ── All teachers (admin only) ── */
+export function useAllTeachers() {
+  const [teachers, setTeachers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'teachers'), (snap) => {
+      const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setTeachers(data);
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  return { teachers, loading };
+}
+
+/* ── Real-time attendance for a specific date (current teacher) ── */
 export function useAttendanceForDate(date) {
   const { user } = useAuth();
   const [records, setRecords] = useState([]);
@@ -78,7 +113,7 @@ export async function saveAttendance(date, studentId, status, userId) {
   }
 }
 
-/* ── All attendance records (for reports) ── */
+/* ── All attendance records for current teacher ── */
 export function useAllAttendance() {
   const { user } = useAuth();
   const [records, setRecords] = useState([]);
@@ -89,13 +124,30 @@ export function useAllAttendance() {
     const q = query(collection(db, 'attendance'), where('userId', '==', user.uid));
     const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      // Sort desc client-side to avoid index requirements
       data.sort((a, b) => new Date(b.date) - new Date(a.date));
       setRecords(data);
       setLoading(false);
     });
     return unsub;
   }, [user]);
+
+  return { records, loading };
+}
+
+/* ── All attendance records across all teachers (admin only) ── */
+export function useAdminAllAttendance() {
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'attendance'), (snap) => {
+      const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      data.sort((a, b) => new Date(b.date) - new Date(a.date));
+      setRecords(data);
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
 
   return { records, loading };
 }
