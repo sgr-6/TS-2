@@ -211,15 +211,16 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {mode!=='admin' && (
-              <p style={{ textAlign:'center',fontSize:'12px',color:'var(--ct3)',marginTop:14,fontWeight:500 }}>
-                {mode==='register'?'Already have an account? ':'No account yet? '}
-                <button type="button" onClick={()=>{setMode(mode==='register'?'login':'register');setError('');}}
-                  style={{ color:'var(--sage)',background:'none',border:'none',cursor:'pointer',fontWeight:700,fontSize:'12px',fontFamily:'Plus Jakarta Sans,sans-serif' }}>
-                  {mode==='register'?'Sign In':'Register free'}
-                </button>
-              </p>
-            )}
+            {/* Register link — shown for all modes */}
+            <p style={{ textAlign:'center',fontSize:'12px',color:'var(--ct3)',marginTop:14,fontWeight:500 }}>
+              {mode==='register'
+                ? <>Already have an account? <button type="button" onClick={()=>{setMode('login');setError('');}} style={{ color:'var(--sage)',background:'none',border:'none',cursor:'pointer',fontWeight:700,fontSize:'12px',fontFamily:'Plus Jakarta Sans,sans-serif' }}>Sign In</button></>
+                : mode==='admin'
+                  ? <>New admin? <button type="button" onClick={()=>{setMode('register');setEmail('appisagar01@gmail.com');setError('');}} style={{ color:'var(--sage)',background:'none',border:'none',cursor:'pointer',fontWeight:700,fontSize:'12px',fontFamily:'Plus Jakarta Sans,sans-serif' }}>Register admin account →</button></>
+                  : <>No account yet? <button type="button" onClick={()=>{setMode('register');setError('');}} style={{ color:'var(--sage)',background:'none',border:'none',cursor:'pointer',fontWeight:700,fontSize:'12px',fontFamily:'Plus Jakarta Sans,sans-serif' }}>Register free</button></>
+              }
+            </p>
+
           </div>
 
           <p style={{ textAlign:'center',fontSize:'11px',color:'var(--nav-t3)',marginTop:18,fontWeight:500 }}>© 2025 TS:2 · Powered by Firebase</p>

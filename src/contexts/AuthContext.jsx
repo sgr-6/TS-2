@@ -11,7 +11,7 @@ import { auth, db } from '../firebase';
 const AuthContext = createContext(null);
 
 // Hardcoded admin email — change this to your desired admin account
-const ADMIN_EMAIL = 'admin@ts2.edu';
+const ADMIN_EMAIL = 'appisagar01@gmail.com';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
