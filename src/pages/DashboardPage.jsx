@@ -1,22 +1,55 @@
 import React, { useMemo } from 'react';
 import { useStudents, useAllAttendance } from '../hooks/useFirestore';
 import { Users, CalendarCheck, TrendingUp, AlertCircle, Flame } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
-const STATS = [
-  { key:'students',  label:'Total Students',  icon:Users,        color:'#8B5CF6' },
-  { key:'today',     label:'Today Present',    icon:CalendarCheck,color:'#10B981' },
-  { key:'avg',       label:'Avg Attendance',   icon:TrendingUp,   color:'#3B82F6' },
-  { key:'low',       label:'Below 75%',        icon:AlertCircle,  color:'#F43F5E' },
-  { key:'streak',    label:'Top Streak',       icon:Flame,        color:'#F97316' },
-];
+/* ── Ring component like the 82% in the image ── */
+function Ring({ pct=0, size=120, color='#7EAD7C', label, sub }) {
+  const r = (size-16)/2;
+  const circ = 2*Math.PI*r;
+  const dash = circ*(pct/100);
+  return (
+    <div style={{ display:'flex',flexDirection:'column',alignItems:'center',gap:10 }}>
+      <div style={{ position:'relative',width:size,height:size }}>
+        <svg width={size} height={size} style={{ transform:'rotate(-90deg)' }}>
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--card3)" strokeWidth={7}/>
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={7}
+            strokeLinecap="round" strokeDasharray={`${dash} ${circ}`}/>
+        </svg>
+        <div style={{ position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center' }}>
+          <p style={{ fontSize:'1.5rem',fontWeight:900,color:'var(--ct1)',letterSpacing:'-.04em',lineHeight:1 }}>{pct}%</p>
+        </div>
+      </div>
+      {label && <div style={{ textAlign:'center' }}>
+        <p style={{ fontSize:'13px',fontWeight:700,color:'var(--ct1)' }}>{label}</p>
+        {sub && <p style={{ fontSize:'11px',fontWeight:500,color:'var(--ct3)',marginTop:2 }}>{sub}</p>}
+      </div>}
+    </div>
+  );
+}
 
-const Tip = ({ active, payload, label }) => {
+/* ── Stat pill ── */
+function Pill({ icon:Icon, label, value, color }) {
+  return (
+    <div style={{ display:'flex',alignItems:'center',gap:10,padding:'12px 14px',borderRadius:14,background:'var(--card2)',border:'1px solid var(--c-edge)' }}>
+      <div style={{ width:36,height:36,borderRadius:10,background:`${color}18`,border:`1px solid ${color}25`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+        <Icon size={17} style={{ color }}/>
+      </div>
+      <div>
+        <p style={{ fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.07em',color:'var(--ct3)',marginBottom:1 }}>{label}</p>
+        <p style={{ fontSize:'1rem',fontWeight:800,color:'var(--ct1)',letterSpacing:'-.02em' }}>{value}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ── Chart tooltip ── */
+const Tip = ({active,payload,label}) => {
   if (!active||!payload?.length) return null;
   return (
-    <div style={{ background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:10,padding:'10px 14px',fontSize:12,color:'var(--t1)',boxShadow:'0 8px 24px rgba(0,0,0,.3)' }}>
-      <p style={{ fontWeight:700,marginBottom:3 }}>{label}</p>
-      <p style={{ color:'#8B5CF6' }}>Attendance: <b>{payload[0]?.value?.toFixed(1)}%</b></p>
+    <div style={{ background:'var(--card)',border:'1px solid var(--c-edge)',borderRadius:10,padding:'8px 12px',fontSize:12,color:'var(--ct1)',boxShadow:'var(--c-shad)' }}>
+      <p style={{ fontWeight:700,marginBottom:2 }}>{label}</p>
+      <p style={{ color:'#7EAD7C',fontWeight:600 }}>{payload[0]?.value?.toFixed(1)}%</p>
     </div>
   );
 };
@@ -26,41 +59,33 @@ export default function DashboardPage() {
   const { records, loading:rL } = useAllAttendance();
 
   const chartData = useMemo(()=>{
-    if (!records.length) return [];
     const d={};
-    records.forEach(r=>{ if(!d[r.date]) d[r.date]={present:0,total:0}; d[r.date].total++; if(r.status==='present') d[r.date].present++; });
-    return Object.entries(d).sort(([a],[b])=>a.localeCompare(b)).slice(-7)
-      .map(([date,{present,total}])=>({ date:new Date(date).toLocaleDateString('en-IN',{month:'short',day:'numeric'}), pct:total>0?(present/total)*100:0 }));
+    records.forEach(r=>{ if(!d[r.date])d[r.date]={p:0,t:0}; d[r.date].t++; if(r.status==='present')d[r.date].p++; });
+    return Object.entries(d).sort(([a],[b])=>a.localeCompare(b)).slice(-7).map(([date,{p,t}])=>({
+      date:new Date(date).toLocaleDateString('en-IN',{month:'short',day:'numeric'}),
+      pct:t>0?Math.round((p/t)*100):0,
+    }));
   },[records]);
 
   const sstats = useMemo(()=>{
     const m={};
-    students.forEach(s=>{m[s.id]={present:0,total:0,...s};});
-    records.forEach(r=>{ if(m[r.studentId]){m[r.studentId].total++;if(r.status==='present')m[r.studentId].present++;} });
+    students.forEach(s=>{m[s.id]={p:0,t:0,...s};});
+    records.forEach(r=>{ if(m[r.studentId]){m[r.studentId].t++;if(r.status==='present')m[r.studentId].p++;} });
     return Object.values(m);
   },[students,records]);
 
-  const avg = useMemo(()=>{ const v=sstats.filter(s=>s.total>0); return v.length?v.reduce((a,s)=>a+(s.present/s.total)*100,0)/v.length:0; },[sstats]);
-  const low = sstats.filter(s=>s.total>0&&(s.present/s.total)*100<75).length;
-
-  const maxStreak = useMemo(()=>{
-    const sr={}; records.forEach(r=>{if(!sr[r.studentId])sr[r.studentId]=[];sr[r.studentId].push(r);});
-    let best=0;
-    students.forEach(s=>{ let k=0; if(sr[s.id]){const srt=sr[s.id].sort((a,b)=>new Date(b.date)-new Date(a.date));for(const r of srt){if(r.status==='present')k++;else break;}} if(k>best)best=k; });
-    return best;
-  },[records,students]);
-
+  const avg = useMemo(()=>{ const v=sstats.filter(s=>s.t>0); return v.length?Math.round(v.reduce((a,s)=>a+(s.p/s.t)*100,0)/v.length):0; },[sstats]);
+  const low = sstats.filter(s=>s.t>0&&(s.p/s.t)*100<75).length;
   const today=new Date().toISOString().split('T')[0];
   const todayP=records.filter(r=>r.date===today&&r.status==='present').length;
   const loading=sL||rL;
 
-  const vals = {
-    students: loading?'—':students.length,
-    today: loading?'—':`${todayP}/${students.length}`,
-    avg: loading?'—':`${avg.toFixed(1)}%`,
-    low: loading?'—':low,
-    streak: loading?'—':`${maxStreak}d`,
-  };
+  const maxStreak=useMemo(()=>{
+    const sr={}; records.forEach(r=>{if(!sr[r.studentId])sr[r.studentId]=[];sr[r.studentId].push(r);});
+    let best=0;
+    students.forEach(s=>{ let k=0; if(sr[s.id]){const x=sr[s.id].sort((a,b)=>new Date(b.date)-new Date(a.date));for(const r of x){if(r.status==='present')k++;else break;}} if(k>best)best=k; });
+    return best;
+  },[records,students]);
 
   return (
     <div className="page-wrap">
@@ -70,98 +95,114 @@ export default function DashboardPage() {
         <p className="page-sub">{new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</p>
       </div>
 
-      {/* Stat cards */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:14 }}>
-        {STATS.map((s,i)=>{
-          const c=s.color;
-          return (
-            <div key={s.key} className={`card stat-card anim-up d${i+1}`}
-              style={{ padding:'18px 16px', display:'flex', gap:13, alignItems:'flex-start', '--before-bg':c }}>
-              <style>{`.stat-card:nth-child(${i+1})::before{background:${c}}`}</style>
-              <div style={{ width:40,height:40,borderRadius:11,flexShrink:0,background:`${c}15`,border:`1px solid ${c}28`,display:'flex',alignItems:'center',justifyContent:'center' }}>
-                <s.icon size={19} style={{ color:c }}/>
-              </div>
-              <div>
-                <p style={{ fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.07em',color:'var(--t3)',marginBottom:3 }}>{s.label}</p>
-                <p style={{ fontSize:'1.45rem',fontWeight:900,color:c,letterSpacing:'-.03em',lineHeight:1 }}>{vals[s.key]}</p>
-              </div>
+      {/* Bento Row 1 */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 2fr', gap:14 }}>
+
+        {/* Ring — Avg Attendance */}
+        <div className="card anim-up d1" style={{ padding:'24px 20px',display:'flex',alignItems:'center',justifyContent:'center' }}>
+          <Ring pct={loading?0:avg} color="#7EAD7C" label="Avg Attendance" sub={`${students.length} students`}/>
+        </div>
+
+        {/* Today card — sage green like the featured card */}
+        <div className="card anim-up d2" style={{ padding:'22px 20px',background:'linear-gradient(145deg,#7EAD7C,#6DBDAC)',border:'none',display:'flex',flexDirection:'column',justifyContent:'space-between' }}>
+          <div>
+            <span style={{ display:'inline-block',padding:'3px 10px',borderRadius:99,background:'rgba(255,255,255,.2)',fontSize:'10px',fontWeight:700,color:'#fff',marginBottom:10 }}>
+              Today
+            </span>
+            <p style={{ fontSize:'1.6rem',fontWeight:900,color:'#fff',letterSpacing:'-.03em',lineHeight:1.1 }}>
+              {loading?'—':todayP}<span style={{ fontSize:'1rem',fontWeight:600,opacity:.7 }}>/{students.length}</span>
+            </p>
+            <p style={{ fontSize:'12px',color:'rgba(255,255,255,.75)',marginTop:6,fontWeight:500 }}>Students present today</p>
+          </div>
+          <div style={{ display:'flex',justifyContent:'flex-end' }}>
+            <CalendarCheck size={32} color="rgba(255,255,255,.3)"/>
+          </div>
+        </div>
+
+        {/* Chart */}
+        <div className="card anim-up d3" style={{ padding:'20px 22px' }}>
+          <div style={{ display:'flex',alignItems:'baseline',justifyContent:'space-between',marginBottom:16 }}>
+            <p style={{ fontSize:'15px',fontWeight:700,color:'var(--ct1)' }}>Attendance Trend</p>
+            <p style={{ fontSize:'11px',color:'var(--ct3)',fontWeight:500 }}>Last 7 sessions</p>
+          </div>
+          {loading||chartData.length===0 ? (
+            <div style={{ height:130,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,color:'var(--ct3)' }}>
+              {loading?'Loading…':'No data yet'}
             </div>
-          );
-        })}
+          ) : (
+            <ResponsiveContainer width="100%" height={130}>
+              <BarChart data={chartData} margin={{top:0,right:0,left:-28,bottom:0}} barSize={18}>
+                <XAxis dataKey="date" tick={{fill:'var(--ct3)',fontSize:10,fontWeight:500}} axisLine={false} tickLine={false}/>
+                <YAxis domain={[0,100]} tick={{fill:'var(--ct3)',fontSize:10}} axisLine={false} tickLine={false} tickFormatter={v=>`${v}%`}/>
+                <Tooltip content={<Tip/>} cursor={{fill:'var(--card2)',radius:8}}/>
+                <Bar dataKey="pct" radius={[6,6,0,0]}>
+                  {chartData.map((entry,i)=>(
+                    <Cell key={i} fill={entry.pct>=75?'#7EAD7C':'#E88090'} fillOpacity={.85}/>
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
       </div>
 
-      {/* Chart */}
-      <div className="card p-6 anim-up d3">
-        <p style={{ fontSize:'12px',fontWeight:700,color:'var(--t2)',marginBottom:16,display:'flex',alignItems:'center',gap:8 }}>
-          <span style={{ width:8,height:8,borderRadius:'50%',background:'#8B5CF6',display:'inline-block',boxShadow:'0 0 6px #8B5CF6' }}/>
-          Weekly Attendance Trend
-        </p>
+      {/* Bento Row 2 — 4 stat pills */}
+      <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12 }} className="anim-up d4">
+        <Pill icon={Users}        label="Total Students"  value={loading?'—':students.length} color="#7BB5E8"/>
+        <Pill icon={TrendingUp}   label="Class Average"   value={loading?'—':`${avg}%`}       color="#7EAD7C"/>
+        <Pill icon={AlertCircle}  label="Below 75%"       value={loading?'—':low}              color="#E88090"/>
+        <Pill icon={Flame}        label="Top Streak"      value={loading?'—':`${maxStreak} days`} color="#E8BC60"/>
+      </div>
+
+      {/* Student Overview */}
+      <div className="card anim-up d5">
+        <div style={{ padding:'16px 20px',borderBottom:'1px solid var(--c-edge)',display:'flex',alignItems:'center',justifyContent:'space-between' }}>
+          <div>
+            <p style={{ fontSize:'14px',fontWeight:700,color:'var(--ct1)' }}>Students</p>
+            <p style={{ fontSize:'11px',color:'var(--ct3)',fontWeight:500 }}>{students.length} registered</p>
+          </div>
+        </div>
+
         {loading ? (
-          <div style={{ height:200,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--t3)',fontSize:13 }}>Loading…</div>
-        ) : chartData.length===0 ? (
-          <div style={{ height:200,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,color:'var(--t3)' }}>No data yet — start marking attendance!</div>
+          <p style={{ padding:'24px',fontSize:13,color:'var(--ct3)' }}>Loading…</p>
+        ) : students.length===0 ? (
+          <p style={{ padding:'32px',textAlign:'center',fontSize:13,color:'var(--ct3)' }}>No students yet. Go to Students → Add Student.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={chartData} margin={{top:4,right:4,left:-24,bottom:0}}>
-              <defs>
-                <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#8B5CF6" stopOpacity={.35}/>
-                  <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/>
-              <XAxis dataKey="date" tick={{fill:'var(--t3)',fontSize:11}} axisLine={false} tickLine={false}/>
-              <YAxis domain={[0,100]} tick={{fill:'var(--t3)',fontSize:11}} axisLine={false} tickLine={false} tickFormatter={v=>`${v}%`}/>
-              <Tooltip content={<Tip/>}/>
-              <Area type="monotone" dataKey="pct" stroke="#8B5CF6" strokeWidth={2.5} fill="url(#g1)" dot={{fill:'#8B5CF6',r:3,strokeWidth:0}} activeDot={{r:5,fill:'#A78BFA',strokeWidth:0}}/>
-            </AreaChart>
-          </ResponsiveContainer>
+          <div style={{ padding:'14px 20px',display:'flex',flexDirection:'column',gap:12 }}>
+            {sstats.slice(0,6).map((s,i)=>{
+              const pct=s.t>0?Math.round((s.p/s.t)*100):null;
+              const color=!pct?'#C0B8A8':pct>=75?'#7EAD7C':'#E88090';
+              return (
+                <div key={i} style={{ display:'flex',alignItems:'center',gap:12 }}>
+                  <div style={{ width:32,height:32,borderRadius:99,background:`${color}18`,border:`1px solid ${color}28`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color,flexShrink:0 }}>
+                    {s.name[0]}
+                  </div>
+                  <div style={{ flex:1,minWidth:0 }}>
+                    <div style={{ display:'flex',justifyContent:'space-between',marginBottom:5 }}>
+                      <p style={{ fontSize:'13px',fontWeight:600,color:'var(--ct1)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis' }}>{s.name}</p>
+                      <span style={{ fontSize:'11px',fontWeight:700,color,flexShrink:0,marginLeft:8 }}>{pct!==null?`${pct}%`:'—'}</span>
+                    </div>
+                    <div className="pbar-track">
+                      <div className="pbar-fill" style={{ width:`${pct||0}%`,background:color }}/>
+                    </div>
+                  </div>
+                  <span style={{ fontSize:'10px',fontWeight:600,color:'var(--ct3)',flexShrink:0,minWidth:40,textAlign:'right' }}>{s.class}</span>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
 
-      {/* Alert */}
-      {low>0 && (
-        <div className="card anim-up d4" style={{ padding:'14px 18px',borderColor:'rgba(244,63,94,.25)',background:'rgba(244,63,94,.04)',display:'flex',alignItems:'center',gap:12 }}>
-          <AlertCircle size={17} style={{color:'#F43F5E',flexShrink:0}}/>
-          <div>
-            <p style={{fontSize:'13px',fontWeight:700,color:'#F43F5E'}}>{low} student{low>1?'s':''} below 75%</p>
-            <p style={{fontSize:'11px',color:'var(--t3)',marginTop:2}}>Review the Reports page for a detailed breakdown.</p>
-          </div>
+      {/* Low attendance alert */}
+      {!loading && low>0 && (
+        <div className="anim-up d6" style={{ padding:'14px 18px',borderRadius:16,background:'var(--rose-l)',border:'1px solid var(--rose-b)',display:'flex',alignItems:'center',gap:12 }}>
+          <AlertCircle size={17} style={{ color:'var(--rose)',flexShrink:0 }}/>
+          <p style={{ fontSize:'13px',fontWeight:700,color:'var(--rose)' }}>
+            {low} student{low>1?'s':''} below 75% — check the Reports page
+          </p>
         </div>
       )}
-
-      {/* Student table */}
-      <div className="card anim-up d5">
-        <div style={{ padding:'14px 18px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',gap:8 }}>
-          <span style={{ width:8,height:8,borderRadius:'50%',background:'#3B82F6',display:'inline-block' }}/>
-          <p style={{ fontSize:'12px',fontWeight:700,color:'var(--t2)' }}>Student Overview</p>
-        </div>
-        {loading ? (
-          <p style={{ padding:'24px 18px',fontSize:13,color:'var(--t3)' }}>Loading…</p>
-        ) : students.length===0 ? (
-          <p style={{ padding:'32px 18px',textAlign:'center',fontSize:13,color:'var(--t3)' }}>No students yet. Go to Students → Add Student.</p>
-        ) : (
-          <div className="table-container" style={{ border:'none',borderRadius:'0 0 14px 14px' }}>
-            <table>
-              <thead><tr><th>Name</th><th>Roll No</th><th>Class</th><th>Attendance</th></tr></thead>
-              <tbody>
-                {sstats.slice(0,8).map((s,i)=>{
-                  const pct=s.total>0?((s.present/s.total)*100).toFixed(1):null;
-                  const col=!pct?'var(--t3)':parseFloat(pct)>=75?'var(--emerald)':'var(--rose)';
-                  return (
-                    <tr key={i}>
-                      <td style={{color:'var(--t1)',fontWeight:600}}>{s.name}</td>
-                      <td style={{color:'var(--t3)'}}>{s.rollNo}</td>
-                      <td><span className="badge" style={{background:'rgba(99,102,241,.12)',color:'var(--indigo)'}}>{s.class}</span></td>
-                      <td><span className="badge" style={{background:`${col}18`,color:col}}>{pct?`${pct}%`:'—'}</span></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
