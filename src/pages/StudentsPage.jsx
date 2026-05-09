@@ -7,12 +7,16 @@ import { UserPlus, Pencil, Trash2, X, Check, Search, Users, Flame, Sparkles, Act
    CONFETTI
 ════════════════════════════════════ */
 function launchConfetti() {
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
   const canvas = document.createElement('canvas');
   Object.assign(canvas.style, { position:'fixed',top:0,left:0,width:'100%',height:'100%',zIndex:9999,pointerEvents:'none' });
   document.body.appendChild(canvas);
   const ctx = canvas.getContext('2d');
   canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-  const COLORS = ['#7EAD7C','#06B6D4','#F59E0B','#EC4899','#8B5CF6','#E88090','#FFD700','#00FFD1'];
+  /* Neon palette for dark mode, warm palette for light */
+  const COLORS = isDark
+    ? ['#4ADE80','#7DD3FC','#F472B6','#00FFD1','#FDE047','#818CF8','#FB7185','#38BDF8']
+    : ['#7EAD7C','#06B6D4','#F59E0B','#EC4899','#8B5CF6','#E88090','#FFD700'];
   const particles = Array.from({length:200},()=>({
     x:Math.random()*canvas.width, y:Math.random()*-canvas.height,
     w:Math.random()*14+6, h:Math.random()*7+4,
@@ -39,11 +43,17 @@ function launchConfetti() {
 ════════════════════════════════════ */
 function getGreeting(name) {
   const h = new Date().getHours();
-  if (h < 5)  return { text:`Late night dev session? Team TS:2 is active! 🌙`, color:'#8B5CF6' };
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  /* Midnight-specific message for dark mode (00:00 – 04:59) */
+  if (h < 5)  return isDark
+    ? { text:`Team TS:2 is in the zone! 🚀 Midnight sessions build great things.`, color:'var(--greet-night-color)' }
+    : { text:`Late night session? Team TS:2 is active! 🌙`, color:'#8B5CF6' };
   if (h < 12) return { text:`Good Morning, ${name}! ☀️`, color:'#F59E0B' };
   if (h < 17) return { text:`Good Afternoon, ${name}! 🌤️`, color:'#06B6D4' };
   if (h < 21) return { text:`Good Evening, ${name}! 🌆`, color:'#F97316' };
-  return { text:`Late night dev session? Team TS:2 is active! 🌙`, color:'#8B5CF6' };
+  return isDark
+    ? { text:`Team TS:2 is in the zone! 🚀 Midnight sessions build great things.`, color:'var(--greet-night-color)' }
+    : { text:`Late night session! Team TS:2 is still active 🌙`, color:'#8B5CF6' };
 }
 
 /* ════════════════════════════════════
@@ -220,14 +230,14 @@ export default function StudentsPage() {
           </div>
           <button id="add-student-btn" onClick={openAdd}
             style={{
-              display:'flex', alignItems:'center', gap:8, padding:'10px 18px',
-              background:'linear-gradient(135deg,#D1FAE5,#A7F3D0)', color:'#065F46',
-              border:'1px solid #6EE7B7', borderRadius:12, fontWeight:800, fontSize:'13px',
-              cursor:'pointer', boxShadow:'0 4px 14px rgba(16,185,129,.25)', fontFamily:'Plus Jakarta Sans,sans-serif',
-              transition:'all .18s ease', minHeight:42,
-            }}
-            onMouseEnter={e=>{ e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 6px 20px rgba(16,185,129,.35)'; }}
-            onMouseLeave={e=>{ e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='0 4px 14px rgba(16,185,129,.25)'; }}
+            display:'flex', alignItems:'center', gap:8, padding:'10px 18px',
+            background:'var(--add-btn-bg)', color:'var(--add-btn-color)',
+            border:'1px solid var(--add-btn-border)', borderRadius:12, fontWeight:800, fontSize:'13px',
+            cursor:'pointer', boxShadow:'var(--add-btn-shadow)', fontFamily:'Plus Jakarta Sans,sans-serif',
+            transition:'all .18s ease', minHeight:42,
+          }}
+          onMouseEnter={e=>{ e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.filter='brightness(1.1)'; }}
+          onMouseLeave={e=>{ e.currentTarget.style.transform=''; e.currentTarget.style.filter=''; }}
           >
             <UserPlus size={16}/> Add Student
           </button>
@@ -268,11 +278,11 @@ export default function StudentsPage() {
                 const streak = streaks[s.id]||0;
                 return (
                   <div key={s.id}
+                    className={`stu-row${streak>10?' stu-row-elite':''}`}
                     style={{
                       display:'grid', gridTemplateColumns:'44px 1fr 130px 80px 110px 90px',
                       alignItems:'center', padding:'12px 18px',
                       borderBottom:i<filtered.length-1?'1px solid var(--c-edge)':'none',
-                      transition:'all .22s cubic-bezier(.22,1,.36,1)',
                       cursor:'default',
                     }}
                     onMouseEnter={e=>{
@@ -301,8 +311,13 @@ export default function StudentsPage() {
                     </span>
                     <span>
                       {streak>0 ? (
-                        <span style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'4px 11px', borderRadius:99, background:'#FEF3C7', color:'#D97706', border:'1px solid #FDE68A', fontSize:'12px', fontWeight:700 }}>
-                          <Flame size={12} style={{ color:'#F59E0B' }}/> {streak} Days
+                        <span style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'4px 11px', borderRadius:99,
+                          background:'var(--streak-bg)', color:'var(--streak-color)',
+                          border:'1px solid var(--streak-border)', fontSize:'12px', fontWeight:700,
+                          filter:'var(--streak-glow)',
+                        }}>
+                          <Flame size={12} style={{ color:'var(--streak-color)' }}/> {streak} Days
+                          {streak>10 && <span style={{ fontSize:'9px', marginLeft:2 }}>★</span>}
                         </span>
                       ) : (
                         <span style={{ fontSize:'12px', color:'var(--ct4)', fontWeight:500 }}>— Days</span>

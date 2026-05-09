@@ -47,34 +47,62 @@
 }
 
 /* ══════════════════════════════════════════════
-   DARK THEME  — deep navy page, warm cream cards
+   DARK THEME  — Midnight Glass / Deep Sea
 ══════════════════════════════════════════════ */
 :root {
-  /* Page / nav surfaces */
-  --bg:       #0B0D1F;
-  --bg1:      #0F1128;
-  --nav-bg:   rgba(8,9,20,0.96);
-  --nav-edge: rgba(255,255,255,0.07);
-  --nav-t1:   #E8E4F2;
-  --nav-t2:   #7C78A0;
-  --nav-t3:   #3E3C58;
+  /* ── Page & nav surfaces ── */
+  --bg:       #0B1120;
+  --bg1:      #0F172A;
+  --nav-bg:   rgba(11,17,32,0.97);
+  --nav-edge: rgba(255,255,255,0.08);
+  --nav-t1:   #F8FAFC;
+  --nav-t2:   #94A3B8;
+  --nav-t3:   #334155;
 
-  /* Card surfaces (warm cream) */
-  --card:     #F5F2EC;
-  --card2:    #EDE9E1;
-  --card3:    #E5E1D8;
-  --ct1:      #17140C;
-  --ct2:      #4A4236;
-  --ct3:      #8A8072;
-  --ct4:      #C0B8A8;
-  --c-edge:   rgba(0,0,0,0.06);
-  --c-shad:   0 4px 20px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.25);
-  --c-shad-h: 0 10px 40px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
+  /* ── Translucent slate glass cards ── */
+  --card:     rgba(30,41,59,0.45);
+  --card2:    rgba(15,23,42,0.70);
+  --card3:    rgba(30,41,59,0.30);
 
-  /* Inputs (inside cards) */
-  --inp-bg:   rgba(0,0,0,0.05);
-  --inp-edge: rgba(0,0,0,0.12);
-  --inp-focus:rgba(126,173,124,0.35);
+  /* ── Text hierarchy (light-on-dark) ── */
+  --ct1:      #FFFFFF;          /* Names: pure white, max legibility */
+  --ct2:      #94A3B8;          /* Roll #: muted blue-grey */
+  --ct3:      #64748B;          /* Labels */
+  --ct4:      #334155;          /* Very muted */
+
+  /* ── Borders: the "secret sauce" 1px inner glow ── */
+  --c-edge:   rgba(255,255,255,0.08);
+  --c-shad:   0 4px 24px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.4);
+  --c-shad-h: 0 8px 40px rgba(0,0,0,0.65), 0 2px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(125,211,252,0.25);
+
+  /* ── Glass blur — lets deep-navy gradient peek through ── */
+  --blur:     blur(16px) saturate(180%);
+
+  /* ── Inputs (inside glass cards) ── */
+  --inp-bg:   rgba(15,23,42,0.80);
+  --inp-edge: rgba(255,255,255,0.10);
+  --inp-focus:rgba(74,222,128,0.20);
+
+  /* ── Neon-pastel sage (primary accent in dark) ── */
+  --sage:     #4ADE80;
+  --sage-l:   rgba(74,222,128,0.12);
+  --sage-b:   rgba(74,222,128,0.40);
+
+  /* ── Theme-specific badge / button tokens ── */
+  --streak-bg:      rgba(253,224,71,0.12);
+  --streak-color:   #FDE047;
+  --streak-border:  rgba(253,224,71,0.35);
+  --streak-glow:    drop-shadow(0 0 6px rgba(253,224,71,0.35));
+
+  --add-btn-bg:     linear-gradient(135deg,#4ADE80,#22C55E);
+  --add-btn-color:  #052e16;
+  --add-btn-border: rgba(74,222,128,0.50);
+  --add-btn-shadow: 0 4px 16px rgba(74,222,128,0.30);
+
+  --row-hover-bg:   rgba(51,65,85,0.65);
+  --row-hover-bd:   rgba(125,211,252,0.55);
+
+  --greet-night-color: #818CF8;
 }
 
 /* ══════════════════════════════════════════════
@@ -100,9 +128,30 @@
   --c-shad:   0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04);
   --c-shad-h: 0 4px 16px rgba(0,0,0,0.10), 0 12px 32px rgba(0,0,0,0.06);
 
+  --blur:     none;
   --inp-bg:   rgba(0,0,0,0.03);
   --inp-edge: rgba(0,0,0,0.10);
   --inp-focus:rgba(126,173,124,0.30);
+
+  --sage:     #7EAD7C;
+  --sage-l:   rgba(126,173,124,.15);
+  --sage-b:   rgba(126,173,124,.3);
+
+  /* Light-mode badge/button tokens */
+  --streak-bg:      #FEF3C7;
+  --streak-color:   #D97706;
+  --streak-border:  #FDE68A;
+  --streak-glow:    none;
+
+  --add-btn-bg:     linear-gradient(135deg,#D1FAE5,#A7F3D0);
+  --add-btn-color:  #065F46;
+  --add-btn-border: #6EE7B7;
+  --add-btn-shadow: 0 4px 14px rgba(16,185,129,0.25);
+
+  --row-hover-bg:   var(--card2);
+  --row-hover-bd:   rgba(126,173,124,0.4);
+
+  --greet-night-color: #8B5CF6;
 }
 
 /* ══════════════════════════════════════════════
@@ -125,11 +174,26 @@ body {
 /* ══════════════════════════════════════════════
    ANIMATIONS
 ══════════════════════════════════════════════ */
-@keyframes fadeUp  { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
-@keyframes fadeIn  { from{opacity:0} to{opacity:1} }
-@keyframes scaleIn { from{opacity:0;transform:scale(.94)} to{opacity:1;transform:none} }
-@keyframes spin    { to{transform:rotate(360deg)} }
-@keyframes dash    { to{stroke-dashoffset:0} }
+@keyframes fadeUp    { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+@keyframes fadeIn    { from{opacity:0} to{opacity:1} }
+@keyframes scaleIn   { from{opacity:0;transform:scale(.94)} to{opacity:1;transform:none} }
+@keyframes spin      { to{transform:rotate(360deg)} }
+@keyframes dash      { to{stroke-dashoffset:0} }
+
+/* Elite pulse — slow mint glow for streak > 10 in dark mode */
+@keyframes elitePulse {
+  0%,100% {
+    border-color: rgba(74,222,128,0.15);
+    box-shadow: 0 4px 20px rgba(0,0,0,.55);
+  }
+  50% {
+    border-color: rgba(74,222,128,0.60);
+    box-shadow: 0 4px 24px rgba(0,0,0,.55), 0 0 18px rgba(74,222,128,0.14), inset 0 0 0 1px rgba(74,222,128,0.12);
+  }
+}
+
+/* Neon confetti keyframe helper (used by JS confetti in dark mode) */
+@keyframes confettiSpin { to { transform: rotate(360deg); } }
 
 .anim-up    { animation: fadeUp  .45s cubic-bezier(.22,1,.36,1) both; }
 .anim-in    { animation: fadeIn  .3s ease both; }
@@ -142,10 +206,12 @@ body {
 ══════════════════════════════════════════════ */
 .card {
   background: var(--card);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
   border-radius: 22px;
-  border: 1px solid var(--c-edge);
+  border: 1px solid var(--c-edge);   /* The 1px "secret sauce" inner-glow border */
   box-shadow: var(--c-shad);
-  transition: transform .22s cubic-bezier(.22,1,.36,1), box-shadow .22s ease;
+  transition: transform .22s cubic-bezier(.22,1,.36,1), box-shadow .22s ease, border-color .22s ease;
 }
 .card:hover { transform: translateY(-2px); box-shadow: var(--c-shad-h); }
 .card-sm { border-radius: 16px; }
@@ -156,9 +222,37 @@ body {
   box-shadow: var(--c-shad);
 }
 /* compat alias */
-.glass-card { background:var(--card); border-radius:22px; border:1px solid var(--c-edge); box-shadow:var(--c-shad); transition:transform .22s cubic-bezier(.22,1,.36,1),box-shadow .22s; }
+.glass-card {
+  background:var(--card);
+  backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+  border-radius:22px; border:1px solid var(--c-edge);
+  box-shadow:var(--c-shad);
+  transition:transform .22s cubic-bezier(.22,1,.36,1),box-shadow .22s;
+}
 .glass-card:hover { transform:translateY(-2px); box-shadow:var(--c-shad-h); }
-.glass { background:var(--card2); border-radius:16px; border:1px solid var(--c-edge); }
+.glass { background:var(--card2); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur); border-radius:16px; border:1px solid var(--c-edge); }
+
+/* ─── Student row ─── */
+.stu-row {
+  transition: background .2s ease, border-color .2s ease, transform .22s cubic-bezier(.22,1,.36,1), box-shadow .22s ease;
+}
+.stu-row:hover {
+  background: var(--row-hover-bg) !important;
+  border-color: var(--row-hover-bd) !important;
+  transform: translateY(-2px);
+  box-shadow: var(--c-shad-h) !important;
+  border-radius: 18px;
+  z-index: 2;
+  position: relative;
+}
+
+/* ─── Elite pulse (streak > 10, dark & midnight mode only) ─── */
+.stu-row-elite {
+  animation: elitePulse 3.2s ease-in-out infinite;
+}
+[data-theme="light"] .stu-row-elite {
+  animation: none;   /* disabled in light mode */
+}
 
 /* ══════════════════════════════════════════════
    TYPOGRAPHY HELPERS
