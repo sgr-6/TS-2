@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -49,6 +49,23 @@ export default function Layout({ children }) {
   const [mini, setMini] = useState(false);
   const [mob, setMob] = useState(false);
   const [theme, setTheme] = useState(()=>localStorage.getItem('ts2-theme')||'dark');
+  const [midnightToast, setMidnightToast] = useState(false);
+  const logoClickCount = useRef(0);
+  const logoClickTimer = useRef(null);
+
+  function handleLogoTripleClick() {
+    logoClickCount.current += 1;
+    clearTimeout(logoClickTimer.current);
+    logoClickTimer.current = setTimeout(() => { logoClickCount.current = 0; }, 800);
+    if (logoClickCount.current >= 3) {
+      logoClickCount.current = 0;
+      const isMidnight = document.documentElement.getAttribute('data-theme') === 'midnight';
+      const next = isMidnight ? theme : 'midnight';
+      document.documentElement.setAttribute('data-theme', next);
+      setMidnightToast(!isMidnight);
+      setTimeout(() => setMidnightToast(false), 3000);
+    }
+  }
 
   useEffect(()=>{
     document.documentElement.setAttribute('data-theme', theme);
@@ -61,7 +78,8 @@ export default function Layout({ children }) {
     <div style={{ display:'flex', flexDirection:'column', height:'100%', overflow:'hidden' }}>
       {/* Logo */}
       <div style={{ display:'flex', alignItems:'center', gap:10, padding:'18px 14px 16px', borderBottom:'1px solid var(--nav-edge)' }}>
-        <div style={{ width:34,height:34,borderRadius:10,flexShrink:0, background:'linear-gradient(135deg,#7EAD7C,#6DBDAC)', display:'flex',alignItems:'center',justifyContent:'center', boxShadow:'0 3px 10px rgba(126,173,124,.35)' }}>
+        <div style={{ width:34,height:34,borderRadius:10,flexShrink:0, background:'linear-gradient(135deg,#7EAD7C,#6DBDAC)', display:'flex',alignItems:'center',justifyContent:'center', boxShadow:'0 3px 10px rgba(126,173,124,.35)', cursor:'pointer', userSelect:'none' }}
+          onClick={handleLogoTripleClick} title="TS:2 (triple-click for secret mode)">
           <GraduationCap size={18} color="#fff"/>
         </div>
         {!isMini && (
@@ -194,6 +212,20 @@ export default function Layout({ children }) {
         @media(min-width:768px){#desk-rail{display:flex!important}}
         @media(max-width:767px){#mob-hdr{display:flex!important}#mob-nav{display:flex!important}}
       `}</style>
+
+      {midnightToast && (
+        <div style={{
+          position:'fixed',bottom:'1.5rem',left:'50%',transform:'translateX(-50%)',
+          padding:'12px 24px',borderRadius:16,
+          background:'linear-gradient(135deg,#00FFD1,#00B4D8)',
+          color:'#060B18',fontWeight:800,fontSize:'13px',
+          display:'flex',alignItems:'center',gap:8,
+          boxShadow:'0 4px 24px rgba(0,255,200,.4)',zIndex:99,
+          animation:'fadeUp .4s ease both',whiteSpace:'nowrap',
+        }}>
+          🌙 Midnight Glass activated! Triple-click again to exit.
+        </div>
+      )}
     </div>
   );
 }

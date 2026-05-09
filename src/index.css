@@ -1,6 +1,39 @@
 @import "tailwindcss";
 
 /* ══════════════════════════════════════════════
+   MIDNIGHT GLASS  — secret triple-click theme
+══════════════════════════════════════════════ */
+[data-theme="midnight"] {
+  --bg:       #060B18;
+  --bg1:      #0A1020;
+  --nav-bg:   rgba(4,8,20,.97);
+  --nav-edge: rgba(0,255,200,.18);
+  --nav-t1:   #00FFD1;
+  --nav-t2:   #00B4D8;
+  --nav-t3:   #0A3D5C;
+  --card:     #0F1E2E;
+  --card2:    #0A1828;
+  --card3:    #091320;
+  --ct1:      #E0F7FA;
+  --ct2:      #B2EBF2;
+  --ct3:      #4DD0E1;
+  --ct4:      #006064;
+  --c-edge:   rgba(0,255,200,.2);
+  --c-shad:   0 4px 24px rgba(0,255,200,.08), 0 1px 4px rgba(0,0,0,.6);
+  --c-shad-h: 0 10px 40px rgba(0,255,200,.18), 0 2px 8px rgba(0,0,0,.7);
+  --inp-bg:   rgba(0,255,200,.05);
+  --inp-edge: rgba(0,255,200,.2);
+  --inp-focus:rgba(0,255,200,.25);
+  --sage:     #00FFD1;
+  --sage-l:   rgba(0,255,209,.1);
+  --sage-b:   rgba(0,255,209,.3);
+  --primary:  #00FFD1;
+  --primary-l:rgba(0,255,209,.1);
+  --primary-b:rgba(0,255,209,.3);
+  --borderH:  rgba(0,255,200,.7);
+}
+
+/* ══════════════════════════════════════════════
    ACCENT PALETTE  (same in both themes — muted, warm)
 ══════════════════════════════════════════════ */
 :root {
