@@ -4,40 +4,30 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard, Users, CalendarCheck, BarChart3, LogOut,
   GraduationCap, Menu, X, Brain, QrCode, MapPin, Sun, Moon,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react';
 
-const NAV_ITEMS = [
-  { to: '/',           icon: LayoutDashboard, label: 'Dashboard',     id: 'nav-dashboard' },
-  { to: '/students',   icon: Users,            label: 'Students',      id: 'nav-students' },
-  { to: '/attendance', icon: CalendarCheck,    label: 'Attendance',    id: 'nav-attendance' },
-  { to: '/insights',   icon: Brain,            label: 'Smart Insights',id: 'nav-insights' },
-  { to: '/qr-checkin', icon: QrCode,           label: 'QR Check-in',  id: 'nav-qr' },
-  { to: '/geofence',   icon: MapPin,           label: 'Geofence Radar',id: 'nav-geofence' },
-  { to: '/reports',    icon: BarChart3,         label: 'Reports',       id: 'nav-reports' },
+const NAV = [
+  { to:'/',           icon:LayoutDashboard, label:'Dashboard'    },
+  { to:'/students',   icon:Users,            label:'Students'     },
+  { to:'/attendance', icon:CalendarCheck,    label:'Attendance'   },
+  { to:'/insights',   icon:Brain,            label:'Smart Insights'},
+  { to:'/qr-checkin', icon:QrCode,           label:'QR Check-in'  },
+  { to:'/geofence',   icon:MapPin,           label:'Geofence'     },
+  { to:'/reports',    icon:BarChart3,        label:'Reports'      },
 ];
 
 function NavItem({ item, collapsed, onClick }) {
-  const location = useLocation();
-  const isActive = item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to);
+  const { pathname } = useLocation();
+  const isActive = item.to === '/' ? pathname === '/' : pathname.startsWith(item.to);
   return (
     <NavLink
-      id={item.id}
       to={item.to}
       onClick={onClick}
-      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
-      style={{
-        color: isActive ? 'var(--accent)' : 'var(--text-3)',
-        background: isActive ? 'var(--accent-subtle)' : 'transparent',
-        border: isActive ? '1px solid var(--border-focus)' : '1px solid transparent',
-        minHeight: '44px',
-        justifyContent: collapsed ? 'center' : 'flex-start',
-        textDecoration: 'none',
-        boxShadow: isActive ? '0 0 12px var(--accent-glow)' : 'none',
-      }}
-      onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = 'var(--accent-subtle)'; e.currentTarget.style.color = 'var(--accent)'; }}
-      onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-3)'; } }}
+      className={`nav-item${isActive ? ' active' : ''}`}
+      style={{ justifyContent: collapsed ? 'center' : 'flex-start' }}
     >
-      <item.icon size={19} style={{ flexShrink: 0 }} />
+      <item.icon size={18} style={{ flexShrink:0 }} />
       {!collapsed && <span>{item.label}</span>}
     </NavLink>
   );
@@ -56,96 +46,83 @@ export default function Layout({ children }) {
 
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
-  const SidebarContent = ({ isCollapsed, onNavClick }) => (
-    <>
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5" style={{ borderBottom: '1px solid var(--border)' }}>
-        <div
-          className="flex items-center justify-center w-9 h-9 rounded-xl flex-shrink-0"
-          style={{
-            background: 'var(--grad-accent)',
-            boxShadow: '0 4px 16px var(--accent-glow)',
-          }}
-        >
-          <GraduationCap size={19} color="white" />
-        </div>
-        {!isCollapsed && (
-          <span className="font-black text-lg gradient-text tracking-tight">TS:2</span>
-        )}
-        {!isCollapsed && (
-          <div className="ml-auto flex items-center gap-1.5">
-            <button
-              className="theme-toggle"
-              onClick={toggleTheme}
-              aria-label="Toggle theme"
-              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            >
-              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
-            <button
-              id="sidebar-collapse-btn"
-              className="theme-toggle"
-              onClick={() => setCollapsed(v => !v)}
-              aria-label="Toggle sidebar"
-            >
-              <X size={16} />
-            </button>
+  const Logo = () => (
+    <div style={{
+      width:38, height:38, borderRadius:12, flexShrink:0,
+      background:'var(--g-hero)',
+      display:'flex', alignItems:'center', justifyContent:'center',
+      boxShadow:'0 4px 16px var(--pglow)',
+    }}>
+      <GraduationCap size={20} color="#fff" />
+    </div>
+  );
+
+  const SideContent = ({ isCol, onNav }) => (
+    <div style={{ display:'flex', flexDirection:'column', height:'100%' }}>
+      {/* Header */}
+      <div style={{
+        display:'flex', alignItems:'center', gap:10,
+        padding:'18px 14px', borderBottom:'1px solid var(--edge)',
+      }}>
+        <Logo />
+        {!isCol && <>
+          <div style={{ flex:1, overflow:'hidden' }}>
+            <p className="aurora-text" style={{ fontSize:'1.05rem', fontWeight:900, letterSpacing:'-.02em' }}>TS:2</p>
+            <p style={{ fontSize:'9px', color:'var(--ink4)', fontWeight:600, letterSpacing:'.08em', textTransform:'uppercase' }}>Smart Presence</p>
           </div>
-        )}
-        {isCollapsed && (
-          <button
-            id="sidebar-collapse-btn"
-            className="theme-toggle"
-            style={{ width: '32px', height: '32px' }}
-            onClick={() => setCollapsed(v => !v)}
-          >
-            <Menu size={15} />
+          <button className="theme-btn" onClick={toggleTheme} title="Toggle theme">
+            {theme==='dark' ? <Sun size={15}/> : <Moon size={15}/>}
           </button>
-        )}
+        </>}
+        <button
+          className="theme-btn"
+          onClick={() => setCollapsed(v => !v)}
+          style={{ display: 'none' }}
+          id="sidebar-collapse-btn"
+        />
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {NAV_ITEMS.map((item) => (
-          <NavItem key={item.to} item={item} collapsed={isCollapsed} onClick={onNavClick} />
-        ))}
+      <nav style={{ flex:1, padding:10, display:'flex', flexDirection:'column', gap:3, overflowY:'auto' }}>
+        {NAV.map(item => <NavItem key={item.to} item={item} collapsed={isCol} onClick={onNav} />)}
       </nav>
 
-      {/* Team */}
-      {!isCollapsed && (
-        <div className="px-4 py-3 text-center" style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
-          <p className="text-[10px] uppercase tracking-widest font-bold" style={{ color: 'var(--accent)' }}>Team</p>
-          <p className="text-[11px] mt-1 font-medium" style={{ color: 'var(--text-3)' }}>
-            Sagar · Thejas<br />Supriya · Thousif
-          </p>
+      {/* Team tag */}
+      {!isCol && (
+        <div style={{
+          padding:'10px 14px', margin:'0 10px 8px',
+          borderRadius:12, background:'var(--psub)', border:'1px solid rgba(124,111,255,.12)',
+          textAlign:'center',
+        }}>
+          <p style={{ fontSize:'9px', fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase', color:'var(--p)', marginBottom:3 }}>Team</p>
+          <p style={{ fontSize:'11px', color:'var(--ink3)', fontWeight:500 }}>Sagar · Thejas · Supriya · Thousif</p>
         </div>
       )}
 
       {/* User */}
-      <div className="p-3">
-        {!isCollapsed && (
-          <div
-            className="flex items-start gap-3 px-3 py-2.5 mb-2 rounded-xl"
-            style={{ background: 'var(--accent-subtle)', border: '1px solid var(--border)' }}
-          >
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black flex-shrink-0"
-              style={{ background: 'var(--grad-accent)', color: 'white', boxShadow: '0 2px 10px var(--accent-glow)' }}
-            >
-              {user?.email?.[0]?.toUpperCase() || 'A'}
+      <div style={{ padding:'10px 10px 14px' }}>
+        {!isCol && (
+          <div style={{
+            display:'flex', alignItems:'center', gap:10,
+            padding:'8px 10px', marginBottom:8,
+            borderRadius:12, background:'var(--surface)', border:'1px solid var(--edge)',
+          }}>
+            <div style={{
+              width:34, height:34, borderRadius:10, flexShrink:0,
+              background:'var(--g-hero)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:13, fontWeight:900, color:'#fff',
+              boxShadow:'0 2px 8px var(--pglow)',
+            }}>
+              {(userProfile?.teacherName || user?.email || '?')[0].toUpperCase()}
             </div>
-            <div className="overflow-hidden">
-              <p className="text-xs font-bold truncate" style={{ color: 'var(--text-1)' }}>
+            <div style={{ overflow:'hidden', flex:1 }}>
+              <p style={{ fontSize:'12px', fontWeight:700, color:'var(--ink1)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                 {userProfile?.teacherName || user?.email}
               </p>
               {userProfile?.subjectName && (
-                <p className="text-[10px] truncate font-semibold" style={{ color: 'var(--accent)' }}>
+                <p style={{ fontSize:'10px', color:'var(--p)', fontWeight:600, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                   {userProfile.subjectName} · {userProfile.semester}
-                </p>
-              )}
-              {userProfile?.department && (
-                <p className="text-[10px] truncate" style={{ color: 'var(--text-3)' }}>
-                  {userProfile.department}
                 </p>
               )}
             </div>
@@ -154,89 +131,124 @@ export default function Layout({ children }) {
         <button
           id="logout-btn"
           onClick={logout}
-          className="btn btn-secondary w-full text-xs"
-          style={{ justifyContent: isCollapsed ? 'center' : 'flex-start', borderRadius: '12px' }}
+          className="btn btn-secondary"
+          style={{ width:'100%', justifyContent: isCol ? 'center' : 'flex-start', fontSize:'12px', borderRadius:10 }}
         >
-          <LogOut size={15} />
-          {!isCollapsed && 'Sign Out'}
+          <LogOut size={14} />
+          {!isCol && 'Sign Out'}
         </button>
       </div>
-    </>
+    </div>
   );
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-base)' }}>
-      {/* Desktop Sidebar */}
+    <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:'var(--bg0)' }}>
+
+      {/* Desktop sidebar */}
       <aside
-        className="hidden md:flex flex-col sidebar transition-all duration-300"
-        style={{ width: collapsed ? '72px' : '248px', minWidth: collapsed ? '72px' : '248px' }}
+        className="sidebar-rail"
+        style={{
+          width: collapsed ? 68 : 240,
+          minWidth: collapsed ? 68 : 240,
+          transition:'width .3s cubic-bezier(.22,1,.36,1)',
+          display:'none',
+          flexDirection:'column',
+          position:'relative',
+          zIndex:20,
+        }}
+        id="desktop-sidebar"
       >
-        <SidebarContent isCollapsed={collapsed} />
+        <SideContent isCol={collapsed} />
+        {/* Collapse pill */}
+        <button
+          onClick={() => setCollapsed(v => !v)}
+          style={{
+            position:'absolute', right:-12, top:'50%', transform:'translateY(-50%)',
+            width:24, height:24, borderRadius:999,
+            background:'var(--p)', border:'none', cursor:'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            boxShadow:'0 2px 8px var(--pglow)', color:'#fff', zIndex:10,
+          }}
+        >
+          {collapsed ? <ChevronRight size={12}/> : <ChevronLeft size={12}/>}
+        </button>
       </aside>
 
-      {/* Mobile Overlay */}
+      {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 md:hidden"
+          style={{ position:'fixed', inset:0, zIndex:40, background:'rgba(0,0,0,.6)', backdropFilter:'blur(4px)' }}
           onClick={() => setMobileOpen(false)}
-          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
         />
       )}
 
-      {/* Mobile Drawer */}
+      {/* Mobile drawer */}
       <aside
-        className="fixed top-0 left-0 h-full z-50 md:hidden flex flex-col sidebar transition-transform duration-300"
-        style={{ width: '260px', transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)' }}
+        className="sidebar-rail"
+        style={{
+          position:'fixed', top:0, left:0, height:'100%',
+          width:260, zIndex:50,
+          transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition:'transform .3s cubic-bezier(.22,1,.36,1)',
+        }}
       >
-        <SidebarContent isCollapsed={false} onNavClick={() => setMobileOpen(false)} />
+        <SideContent isCol={false} onNav={() => setMobileOpen(false)} />
       </aside>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile top bar */}
-        <header
-          className="flex md:hidden items-center gap-3 px-4 py-3"
-          style={{ background: 'var(--nav-bg)', borderBottom: '1px solid var(--border)', backdropFilter: 'blur(16px)' }}
-        >
+      <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', minWidth:0 }}>
+
+        {/* Mobile topbar */}
+        <header style={{
+          display:'flex', alignItems:'center', gap:12,
+          padding:'10px 16px',
+          background:'var(--nav)',
+          borderBottom:'1px solid var(--edge)',
+          backdropFilter:'var(--blur)',
+          WebkitBackdropFilter:'var(--blur)',
+        }}>
           <button
             id="mobile-menu-btn"
             onClick={() => setMobileOpen(true)}
-            className="theme-toggle"
-            aria-label="Open menu"
+            className="theme-btn"
+            style={{ flexShrink:0 }}
           >
-            <Menu size={19} />
+            <Menu size={18} />
           </button>
-          <div
-            className="flex items-center justify-center w-8 h-8 rounded-xl"
-            style={{ background: 'var(--grad-accent)', boxShadow: '0 2px 10px var(--accent-glow)' }}
-          >
-            <GraduationCap size={15} color="white" />
-          </div>
-          <span className="font-black gradient-text">TS:2</span>
-          <button className="theme-toggle ml-auto" onClick={toggleTheme} aria-label="Toggle theme">
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          <Logo />
+          <span className="aurora-text" style={{ fontWeight:900, fontSize:'1rem', flex:1 }}>TS:2</span>
+          <button className="theme-btn" onClick={toggleTheme}>
+            {theme==='dark' ? <Sun size={15}/> : <Moon size={15}/>}
           </button>
         </header>
 
         {/* Page */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main style={{ flex:1, overflowY:'auto', padding:'20px 20px 100px' }}>
           {children}
         </main>
 
         {/* Mobile bottom nav */}
-        <nav
-          className="flex md:hidden"
-          style={{ background: 'var(--nav-bg)', borderTop: '1px solid var(--border)', backdropFilter: 'blur(16px)' }}
-        >
-          {NAV_ITEMS.map((item) => {
-            const path = window.location.pathname;
-            const isActive = item.to === '/' ? path === '/' : path.startsWith(item.to);
+        <nav style={{
+          display:'flex',
+          background:'var(--nav)',
+          borderTop:'1px solid var(--edge)',
+          backdropFilter:'var(--blur)',
+          WebkitBackdropFilter:'var(--blur)',
+        }}>
+          {NAV.map(item => {
+            const isActive = item.to==='/' ? window.location.pathname==='/' : window.location.pathname.startsWith(item.to);
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
-                className="flex-1 flex flex-col items-center justify-center gap-1 py-2 text-[10px] font-bold"
-                style={{ color: isActive ? 'var(--accent)' : 'var(--text-4)', minHeight: '56px', textDecoration: 'none', transition: 'color 0.2s' }}
+                style={{
+                  flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+                  gap:3, padding:'8px 0',
+                  color: isActive ? 'var(--p)' : 'var(--ink4)',
+                  textDecoration:'none', fontSize:'9px', fontWeight:700,
+                  letterSpacing:'.04em', minHeight:56, transition:'color .2s',
+                  textTransform:'uppercase',
+                }}
               >
                 <item.icon size={19} />
                 <span>{item.label.split(' ')[0]}</span>
@@ -245,6 +257,18 @@ export default function Layout({ children }) {
           })}
         </nav>
       </div>
+
+      {/* CSS fix for desktop sidebar visibility */}
+      <style>{`
+        @media(min-width:768px){
+          #desktop-sidebar{display:flex!important;}
+          header:has(#mobile-menu-btn){display:none;}
+          nav:has(a[style*="minHeight: 56"]){display:none;}
+        }
+        @media(max-width:767px){
+          #desktop-sidebar{display:none!important;}
+        }
+      `}</style>
     </div>
   );
 }

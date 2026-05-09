@@ -1,371 +1,230 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import {
-  GraduationCap, Mail, Lock, Eye, EyeOff,
-  User, BookOpen, Hash, Building2, ShieldCheck,
-} from 'lucide-react';
+import { GraduationCap, Mail, Lock, Eye, EyeOff, User, BookOpen, Hash, Building2, ShieldCheck } from 'lucide-react';
 
-const SEMESTERS = ['1st Sem', '2nd Sem', '3rd Sem', '4th Sem', '5th Sem', '6th Sem', '7th Sem', '8th Sem'];
+const SEMS = ['1st Sem','2nd Sem','3rd Sem','4th Sem','5th Sem','6th Sem','7th Sem','8th Sem'];
 
-function FloatingOrb({ style }) {
-  return (
-    <div
-      className="pointer-events-none fixed rounded-full"
-      style={{ filter: 'blur(80px)', opacity: 0.12, ...style }}
-    />
-  );
-}
-
-function GlassInput({ icon: Icon, label, id, ...props }) {
-  return (
-    <div>
-      <label className="block text-xs font-semibold mb-1.5 tracking-wide uppercase" style={{ color: '#94a3b8' }}>
-        {label}
-      </label>
-      <div className="relative">
-        {Icon && (
-          <Icon size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#6366f1' }} />
-        )}
-        <input
-          id={id}
-          className="input"
-          style={{ paddingLeft: Icon ? '2.25rem' : '1rem', background: 'rgba(15,23,42,0.6)', borderColor: 'rgba(99,102,241,0.2)' }}
-          {...props}
-        />
-      </div>
+const Field = ({ label, icon: Icon, children }) => (
+  <div>
+    <label style={{ display:'block', fontSize:'11px', fontWeight:700, textTransform:'uppercase', letterSpacing:'.06em', color:'var(--ink3)', marginBottom:6 }}>
+      {label}
+    </label>
+    <div style={{ position:'relative' }}>
+      {Icon && <Icon size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'var(--p)', pointerEvents:'none' }} />}
+      {React.cloneElement(children, { style: { ...children.props.style, paddingLeft: Icon ? '2.25rem' : '1rem' } })}
     </div>
-  );
-}
-
-function GlassSelect({ icon: Icon, label, id, children, ...props }) {
-  return (
-    <div>
-      <label className="block text-xs font-semibold mb-1.5 tracking-wide uppercase" style={{ color: '#94a3b8' }}>
-        {label}
-      </label>
-      <div className="relative">
-        {Icon && (
-          <Icon size={15} className="absolute left-3 top-1/2 -translate-y-1/2 z-10" style={{ color: '#6366f1' }} />
-        )}
-        <select
-          id={id}
-          className="input appearance-none cursor-pointer"
-          style={{ paddingLeft: Icon ? '2.25rem' : '1rem', background: 'rgba(15,23,42,0.6)', borderColor: 'rgba(99,102,241,0.2)', color: '#e2e8f0' }}
-          {...props}
-        >
-          {children}
-        </select>
-      </div>
-    </div>
-  );
-}
+  </div>
+);
 
 export default function LoginPage() {
-  const { login, register, ADMIN_EMAIL } = useAuth();
-  // mode: 'login' | 'register' | 'admin'
-  const [mode, setMode] = useState('login');
+  const { login, register } = useAuth();
+  const [mode, setMode] = useState('login'); // login | register | admin
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  // Registration extra fields
+  const [pass, setPass] = useState('');
+  const [showPass, setShowPass] = useState(false);
   const [teacherName, setTeacherName] = useState('');
   const [department, setDepartment] = useState('');
   const [subjectName, setSubjectName] = useState('');
   const [subjectCode, setSubjectCode] = useState('');
   const [semester, setSemester] = useState('4th Sem');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    setError(''); setLoading(true);
     try {
       if (mode === 'register') {
-        if (!teacherName || !department || !subjectName || !subjectCode) {
-          setError('Please fill in all fields.');
-          setLoading(false);
-          return;
-        }
-        await register(email, password, {
-          teacherName,
-          department,
-          subjectName,
-          subjectCode,
-          semester,
-        });
+        if (!teacherName || !department || !subjectName || !subjectCode) { setError('All fields are required.'); return; }
+        await register(email, pass, { teacherName, department, subjectName, subjectCode, semester });
       } else {
-        // login or admin login — same Firebase login
-        await login(email, password);
+        await login(email, pass);
       }
     } catch (err) {
-      const msg =
+      setError(
         err.code === 'auth/invalid-credential' ? 'Invalid email or password.' :
         err.code === 'auth/email-already-in-use' ? 'Email already registered.' :
-        err.code === 'auth/weak-password' ? 'Password should be at least 6 characters.' :
-        err.message;
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
+        err.code === 'auth/weak-password' ? 'Password must be at least 6 characters.' :
+        err.message
+      );
+    } finally { setLoading(false); }
   }
 
-  const isAdmin = mode === 'admin';
-  const isRegister = mode === 'register';
+  const tabs = [
+    { key:'login',    label:'Login'    },
+    { key:'register', label:'Register' },
+    { key:'admin',    label:'🔐 Admin' },
+  ];
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{
-        background: 'radial-gradient(ellipse at 70% 0%, rgba(99,102,241,0.18) 0%, transparent 55%), radial-gradient(ellipse at 0% 100%, rgba(139,92,246,0.12) 0%, transparent 50%), #020617',
-      }}
-    >
-      {/* Ambient orbs */}
-      <FloatingOrb style={{ top: '-5rem', right: '-5rem', width: '28rem', height: '28rem', background: 'radial-gradient(circle, #6366f1, transparent)' }} />
-      <FloatingOrb style={{ bottom: '-5rem', left: '-5rem', width: '24rem', height: '24rem', background: 'radial-gradient(circle, #8b5cf6, transparent)' }} />
-      <FloatingOrb style={{ top: '40%', left: '30%', width: '16rem', height: '16rem', background: 'radial-gradient(circle, #4f46e5, transparent)' }} />
+    <div style={{
+      minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center',
+      padding:'1.5rem',
+      background: 'radial-gradient(ellipse 90% 50% at 50% -10%,rgba(124,111,255,.22) 0%,transparent 60%), radial-gradient(ellipse at 95% 90%,rgba(63,169,255,.12) 0%,transparent 40%), var(--bg0)',
+      position:'relative', overflow:'hidden',
+    }}>
+      {/* Aurora orbs */}
+      {[
+        { top:'-8rem', left:'-8rem', size:'28rem', color:'rgba(124,111,255,.12)' },
+        { bottom:'-6rem', right:'-6rem', size:'24rem', color:'rgba(63,169,255,.10)' },
+        { top:'40%', left:'45%', size:'16rem', color:'rgba(207,123,255,.08)' },
+      ].map((o,i) => (
+        <div key={i} style={{
+          position:'fixed', borderRadius:'50%',
+          width:o.size, height:o.size,
+          top:o.top, bottom:o.bottom, left:o.left, right:o.right,
+          background:`radial-gradient(circle,${o.color},transparent)`,
+          filter:'blur(60px)', pointerEvents:'none',
+        }} />
+      ))}
 
-      <div className="w-full max-w-md animate-scale-in relative z-10">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div
-            className="inline-flex items-center justify-center w-20 h-20 rounded-3xl mb-4 relative"
-            style={{
-              background: 'linear-gradient(135deg, rgba(79,70,229,0.3), rgba(99,102,241,0.15))',
-              border: '1px solid rgba(99,102,241,0.3)',
-              backdropFilter: 'blur(16px)',
-              boxShadow: '0 8px 32px rgba(99,102,241,0.2), inset 0 1px 0 rgba(255,255,255,0.1)',
-            }}
-          >
-            <GraduationCap size={36} color="white" style={{ filter: 'drop-shadow(0 0 8px rgba(99,102,241,0.8))' }} />
+      <div style={{ width:'100%', maxWidth:420, position:'relative', zIndex:1 }} className="animate-scale-in">
+
+        {/* Brand */}
+        <div style={{ textAlign:'center', marginBottom:'2rem' }}>
+          <div style={{
+            width:72, height:72, borderRadius:20, margin:'0 auto 1rem',
+            background:'var(--g-hero)',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            boxShadow:'0 8px 32px var(--pglow)',
+          }}>
+            <GraduationCap size={34} color="#fff" />
           </div>
-          <h1 className="text-4xl font-bold gradient-text tracking-tight">TS:2</h1>
-          <p className="text-sm mt-1.5 font-medium" style={{ color: '#64748b' }}>Smart Presence Simplified</p>
+          <h1 style={{ fontSize:'2.2rem', fontWeight:900, letterSpacing:'-.04em', lineHeight:1 }} className="aurora-text">TS:2</h1>
+          <p style={{ fontSize:'13px', color:'var(--ink3)', marginTop:6, fontWeight:500 }}>Smart Presence Simplified</p>
         </div>
 
-        {/* Mode tabs */}
-        <div
-          className="flex rounded-2xl p-1 mb-6"
-          style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(99,102,241,0.12)', backdropFilter: 'blur(12px)' }}
-        >
-          {[
-            { key: 'login', label: 'Teacher Login' },
-            { key: 'register', label: 'Register' },
-            { key: 'admin', label: '🔐 Admin' },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => { setMode(tab.key); setError(''); }}
-              className="flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200"
+        {/* Tab switcher */}
+        <div style={{
+          display:'flex', padding:4,
+          background:'var(--surface)', backdropFilter:'blur(16px)',
+          border:'1px solid var(--edge)', borderRadius:14,
+          marginBottom:'1.5rem',
+        }}>
+          {tabs.map(t => (
+            <button key={t.key} type="button" onClick={() => { setMode(t.key); setError(''); }}
               style={{
-                background: mode === tab.key ? 'linear-gradient(135deg, #4f46e5, #6366f1)' : 'transparent',
-                color: mode === tab.key ? 'white' : '#64748b',
-                boxShadow: mode === tab.key ? '0 4px 12px rgba(99,102,241,0.3)' : 'none',
-                border: 'none',
-                cursor: 'pointer',
+                flex:1, padding:'9px 0', borderRadius:10, border:'none', cursor:'pointer',
+                fontSize:'12px', fontWeight:700, transition:'all .2s',
+                background: mode===t.key ? 'var(--g-hero)' : 'transparent',
+                color: mode===t.key ? '#fff' : 'var(--ink3)',
+                boxShadow: mode===t.key ? '0 4px 14px var(--pglow)' : 'none',
               }}
             >
-              {tab.label}
+              {t.label}
             </button>
           ))}
         </div>
 
-        {/* Glass card */}
-        <div
-          className="rounded-3xl p-7"
-          style={{
-            background: 'rgba(15,23,42,0.5)',
-            backdropFilter: 'blur(24px)',
-            border: '1px solid rgba(99,102,241,0.15)',
-            boxShadow: '0 24px 64px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
-          }}
-        >
-          {/* Admin badge */}
-          {isAdmin && (
-            <div
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl mb-5"
-              style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)' }}
-            >
-              <ShieldCheck size={16} style={{ color: '#818cf8' }} />
-              <span className="text-xs font-semibold" style={{ color: '#a5b4fc' }}>Admin Access — Principals &amp; HODs</span>
+        {/* Card */}
+        <div style={{
+          background:'var(--surface)', backdropFilter:'blur(28px) saturate(200%)',
+          WebkitBackdropFilter:'blur(28px) saturate(200%)',
+          border:'1px solid var(--edge)', borderRadius:24,
+          padding:'1.75rem',
+          boxShadow:'0 24px 60px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06)',
+        }}>
+
+          {/* Admin notice */}
+          {mode === 'admin' && (
+            <div style={{
+              display:'flex', alignItems:'center', gap:8,
+              padding:'10px 14px', borderRadius:12, marginBottom:18,
+              background:'var(--psub)', border:'1px solid rgba(124,111,255,.2)',
+            }}>
+              <ShieldCheck size={15} style={{ color:'var(--p)', flexShrink:0 }} />
+              <span style={{ fontSize:'12px', color:'var(--p2)', fontWeight:600 }}>Admin access — Principals &amp; HODs only</span>
             </div>
           )}
 
-          <h2 className="text-xl font-bold mb-1" style={{ color: '#f1f5f9' }}>
-            {isAdmin ? 'Admin Portal' : isRegister ? 'Create Teacher Account' : 'Welcome Back'}
+          <h2 style={{ fontSize:'1.15rem', fontWeight:800, color:'var(--ink1)', marginBottom:4 }}>
+            {mode==='admin' ? 'Admin Portal' : mode==='register' ? 'Create Account' : 'Welcome Back'}
           </h2>
-          <p className="text-xs mb-6" style={{ color: '#475569' }}>
-            {isAdmin ? 'Sign in with admin credentials to view all data' :
-             isRegister ? 'Register your subject &amp; teaching details' :
-             'Sign in to manage your class attendance'}
+          <p style={{ fontSize:'12px', color:'var(--ink3)', marginBottom:'1.25rem' }}>
+            {mode==='admin' ? 'Sign in with your admin credentials' :
+             mode==='register' ? 'Register your subject & teaching profile' :
+             'Sign in to your attendance dashboard'}
           </p>
 
           {error && (
-            <div
-              className="mb-5 px-4 py-3 rounded-2xl text-xs font-medium flex items-center gap-2"
-              style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}
-            >
-              <span>⚠</span> {error}
-            </div>
+            <div style={{
+              padding:'10px 14px', borderRadius:12, marginBottom:16,
+              background:'rgba(255,95,126,.10)', color:'var(--ruby)',
+              border:'1px solid rgba(255,95,126,.25)', fontSize:'13px', fontWeight:600,
+            }}>⚠ {error}</div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Teacher name — register only */}
-            {isRegister && (
-              <GlassInput
-                icon={User}
-                label="Teacher Name"
-                id="reg-teacher-name"
-                type="text"
-                placeholder="e.g. Supriya"
-                value={teacherName}
-                onChange={(e) => setTeacherName(e.target.value)}
-                required
-              />
+          <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            {mode==='register' && (
+              <Field label="Your Name" icon={User}>
+                <input className="input" type="text" placeholder="e.g. Supriya" value={teacherName} onChange={e=>setTeacherName(e.target.value)} required />
+              </Field>
             )}
 
-            {/* Email */}
-            <GlassInput
-              icon={Mail}
-              label="Email Address"
-              id="login-email"
-              type="email"
-              placeholder={isAdmin ? 'admin@ts2.edu' : 'teacher@school.edu'}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-            />
+            <Field label="Email" icon={Mail}>
+              <input className="input" type="email" placeholder={mode==='admin' ? 'admin@ts2.edu' : 'teacher@college.edu'}
+                value={email} onChange={e=>setEmail(e.target.value)} required autoComplete="email" />
+            </Field>
 
-            {/* Password */}
-            <div>
-              <label className="block text-xs font-semibold mb-1.5 tracking-wide uppercase" style={{ color: '#94a3b8' }}>
-                Password
-              </label>
-              <div className="relative">
-                <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#6366f1' }} />
-                <input
-                  id="login-password"
-                  type={showPassword ? 'text' : 'password'}
-                  className="input pl-9 pr-10"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete={isRegister ? 'new-password' : 'current-password'}
-                  style={{ background: 'rgba(15,23,42,0.6)', borderColor: 'rgba(99,102,241,0.2)' }}
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
-                  style={{ color: '#475569', background: 'none', border: 'none', cursor: 'pointer' }}
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label="Toggle password visibility"
-                >
-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+            <Field label="Password" icon={Lock}>
+              <div style={{ position:'relative' }}>
+                <input className="input" type={showPass ? 'text' : 'password'} placeholder="••••••••"
+                  value={pass} onChange={e=>setPass(e.target.value)} required
+                  style={{ paddingLeft:'2.25rem', paddingRight:'2.5rem' }} />
+                <Lock size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'var(--p)', pointerEvents:'none' }} />
+                <button type="button" onClick={()=>setShowPass(v=>!v)}
+                  style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--ink3)' }}>
+                  {showPass ? <EyeOff size={15}/> : <Eye size={15}/>}
                 </button>
               </div>
-            </div>
+            </Field>
 
-            {/* Register-only fields */}
-            {isRegister && (
-              <>
-                <GlassInput
-                  icon={Building2}
-                  label="Department"
-                  id="reg-department"
-                  type="text"
-                  placeholder="e.g. Mathematics, CSE, ECE"
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  required
-                />
+            {mode==='register' && <>
+              <Field label="Department" icon={Building2}>
+                <input className="input" type="text" placeholder="e.g. Mathematics, CSE" value={department} onChange={e=>setDepartment(e.target.value)} required />
+              </Field>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                <Field label="Subject" icon={BookOpen}>
+                  <input className="input" type="text" placeholder="e.g. Maths" value={subjectName} onChange={e=>setSubjectName(e.target.value)} required />
+                </Field>
+                <Field label="Code" icon={Hash}>
+                  <input className="input" type="text" placeholder="e.g. 23IST420" value={subjectCode} onChange={e=>setSubjectCode(e.target.value)} required />
+                </Field>
+              </div>
+              <div>
+                <label style={{ display:'block', fontSize:'11px', fontWeight:700, textTransform:'uppercase', letterSpacing:'.06em', color:'var(--ink3)', marginBottom:6 }}>Semester</label>
+                <select className="input" value={semester} onChange={e=>setSemester(e.target.value)} style={{ appearance:'none' }}>
+                  {SEMS.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            </>}
 
-                <div className="grid grid-cols-2 gap-3">
-                  <GlassInput
-                    icon={BookOpen}
-                    label="Subject Name"
-                    id="reg-subject"
-                    type="text"
-                    placeholder="e.g. Maths"
-                    value={subjectName}
-                    onChange={(e) => setSubjectName(e.target.value)}
-                    required
-                  />
-                  <GlassInput
-                    icon={Hash}
-                    label="Subject Code"
-                    id="reg-subjectcode"
-                    type="text"
-                    placeholder="e.g. 23IST420"
-                    value={subjectCode}
-                    onChange={(e) => setSubjectCode(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <GlassSelect
-                  icon={BookOpen}
-                  label="Semester"
-                  id="reg-semester"
-                  value={semester}
-                  onChange={(e) => setSemester(e.target.value)}
-                >
-                  {SEMESTERS.map((s) => (
-                    <option key={s} value={s} style={{ background: '#0f172a' }}>{s}</option>
-                  ))}
-                </GlassSelect>
-              </>
-            )}
-
-            <button
-              id="login-submit-btn"
-              type="submit"
-              className="btn btn-primary w-full mt-2"
-              disabled={loading}
-              style={{
-                minHeight: '48px',
-                borderRadius: '14px',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                opacity: loading ? 0.7 : 1,
-                boxShadow: '0 4px 20px rgba(99,102,241,0.35)',
-              }}
-            >
+            <button id="login-submit-btn" type="submit" className="btn btn-primary" disabled={loading}
+              style={{ marginTop:4, minHeight:48, borderRadius:14, fontSize:'14px', fontWeight:700 }}>
               {loading ? (
-                <span className="flex items-center gap-2 justify-center">
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full" style={{ animation: 'spin 0.6s linear infinite' }} />
-                  {isRegister ? 'Creating Account…' : 'Signing In…'}
+                <span style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <span style={{ width:16, height:16, border:'2px solid rgba(255,255,255,.3)', borderTopColor:'#fff', borderRadius:'50%', animation:'spin .6s linear infinite' }} />
+                  {mode==='register' ? 'Creating…' : 'Signing in…'}
                 </span>
-              ) : (
-                isAdmin ? '🔐 Admin Sign In' : isRegister ? 'Create Account' : 'Sign In'
-              )}
+              ) : mode==='admin' ? '🔐 Admin Sign In' : mode==='register' ? 'Create Account' : 'Sign In'}
             </button>
           </form>
 
-          {!isAdmin && (
-            <div className="mt-5 text-center text-xs" style={{ color: '#475569' }}>
-              {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
-              <button
-                id="toggle-auth-mode"
-                type="button"
-                onClick={() => { setMode(isRegister ? 'login' : 'register'); setError(''); }}
-                style={{ color: '#818cf8', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}
-              >
-                {isRegister ? 'Sign In' : 'Register'}
+          {mode !== 'admin' && (
+            <p style={{ textAlign:'center', fontSize:'12px', color:'var(--ink3)', marginTop:16 }}>
+              {mode==='register' ? 'Already have an account? ' : "Don't have an account? "}
+              <button type="button" onClick={()=>{ setMode(mode==='register' ? 'login' : 'register'); setError(''); }}
+                style={{ color:'var(--p2)', background:'none', border:'none', cursor:'pointer', fontWeight:700, fontSize:'12px' }}>
+                {mode==='register' ? 'Sign In' : 'Register'}
               </button>
-            </div>
+            </p>
           )}
         </div>
 
-        <p className="text-center text-xs mt-5" style={{ color: '#1e293b' }}>
-          © 2025 TS:2 · Powered by Firebase
-        </p>
+        <p style={{ textAlign:'center', fontSize:'11px', color:'var(--ink4)', marginTop:20 }}>© 2025 TS:2 · Powered by Firebase</p>
       </div>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
     </div>
   );
 }
