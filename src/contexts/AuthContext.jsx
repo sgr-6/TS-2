@@ -42,21 +42,23 @@ export function AuthProvider({ children }) {
 
   const register = async (email, password, profileData) => {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
-    // Save teacher profile to Firestore
+    const role = email.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'teacher';
     await setDoc(doc(db, 'teachers', cred.user.uid), {
       ...profileData,
       email,
       uid: cred.user.uid,
-      role: 'teacher',
+      role,
       createdAt: serverTimestamp(),
     });
-    setUserProfile({ ...profileData, email, role: 'teacher' });
+    setUserProfile({ ...profileData, email, role });
     return cred;
   };
 
   const logout = () => signOut(auth);
 
-  const isAdmin = user?.email === ADMIN_EMAIL || userProfile?.role === 'admin';
+  // Case-insensitive email check as primary, Firestore role as fallback
+  const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()
+    || userProfile?.role === 'admin';
 
   return (
     <AuthContext.Provider value={{ user, userProfile, loading, login, register, logout, isAdmin, ADMIN_EMAIL }}>
