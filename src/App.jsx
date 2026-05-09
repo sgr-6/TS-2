@@ -40,9 +40,7 @@ export default function App() {
         element={
           <PrivateRoute>
             {isAdmin ? (
-              <Routes>
-                <Route path="/*" element={<AdminPage />} />
-              </Routes>
+              <AdminPage />
             ) : (
               <Layout>
                 <Routes>
