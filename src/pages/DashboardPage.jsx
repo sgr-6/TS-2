@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
-import { useStudents, useAllAttendance } from '../hooks/useFirestore';
-import { Users, CalendarCheck, TrendingUp, AlertCircle, Flame } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useStudents, useAllAttendance, useAuditLogs } from '../hooks/useFirestore';
+import { Users, CalendarCheck, TrendingUp, AlertCircle, Flame, Activity } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 /* ── Ring component like the 82% in the image ── */
@@ -55,8 +56,12 @@ const Tip = ({active,payload,label}) => {
 };
 
 export default function DashboardPage() {
+  const { userProfile, activeClass } = useAuth();
   const { students, loading:sL } = useStudents();
-  const { records, loading:rL } = useAllAttendance();
+  
+  const classId = activeClass ? `${activeClass.semester} - Section ${activeClass.section}` : (userProfile?.className || null);
+  const { records, loading:rL } = useAllAttendance(classId);
+  const { logs, loading:logL } = useAuditLogs();
 
   const chartData = useMemo(()=>{
     const d={};
@@ -97,7 +102,6 @@ export default function DashboardPage() {
 
       {/* Bento Row 1 */}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 2fr', gap:14 }}>
-
         {/* Ring — Avg Attendance */}
         <div className="card anim-up d1" style={{ padding:'24px 20px',display:'flex',alignItems:'center',justifyContent:'center' }}>
           <Ring pct={loading?0:avg} color="#7EAD7C" label="Avg Attendance" sub={`${students.length} students`}/>
@@ -154,44 +158,76 @@ export default function DashboardPage() {
         <Pill icon={Flame}        label="Top Streak"      value={loading?'—':`${maxStreak} days`} color="#E8BC60"/>
       </div>
 
-      {/* Student Overview */}
-      <div className="card anim-up d5">
-        <div style={{ padding:'16px 20px',borderBottom:'1px solid var(--c-edge)',display:'flex',alignItems:'center',justifyContent:'space-between' }}>
-          <div>
-            <p style={{ fontSize:'14px',fontWeight:700,color:'var(--ct1)' }}>Students</p>
-            <p style={{ fontSize:'11px',color:'var(--ct3)',fontWeight:500 }}>{students.length} registered</p>
+      {/* Row 3 - Students & Recent Activity */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+        {/* Student Overview */}
+        <div className="card anim-up d5">
+          <div style={{ padding:'16px 20px',borderBottom:'1px solid var(--c-edge)',display:'flex',alignItems:'center',justifyContent:'space-between' }}>
+            <div>
+              <p style={{ fontSize:'14px',fontWeight:700,color:'var(--ct1)' }}>Students</p>
+              <p style={{ fontSize:'11px',color:'var(--ct3)',fontWeight:500 }}>{students.length} registered</p>
+            </div>
           </div>
+
+          {loading ? (
+            <p style={{ padding:'24px',fontSize:13,color:'var(--ct3)' }}>Loading…</p>
+          ) : students.length===0 ? (
+            <p style={{ padding:'32px',textAlign:'center',fontSize:13,color:'var(--ct3)' }}>No students yet. Go to Students → Add Student.</p>
+          ) : (
+            <div style={{ padding:'14px 20px',display:'flex',flexDirection:'column',gap:12 }}>
+              {sstats.slice(0,6).map((s,i)=>{
+                const pct=s.t>0?Math.round((s.p/s.t)*100):null;
+                const color=!pct?'#C0B8A8':pct>=75?'#7EAD7C':'#E88090';
+                return (
+                  <div key={i} style={{ display:'flex',alignItems:'center',gap:12 }}>
+                    <div style={{ width:32,height:32,borderRadius:99,background:`${color}18`,border:`1px solid ${color}28`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color,flexShrink:0 }}>
+                      {s.name[0]}
+                    </div>
+                    <div style={{ flex:1,minWidth:0 }}>
+                      <div style={{ display:'flex',justifyContent:'space-between',marginBottom:5 }}>
+                        <p style={{ fontSize:'13px',fontWeight:600,color:'var(--ct1)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis' }}>{s.name}</p>
+                        <span style={{ fontSize:'11px',fontWeight:700,color,flexShrink:0,marginLeft:8 }}>{pct!==null?`${pct}%`:'—'}</span>
+                      </div>
+                      <div className="pbar-track">
+                        <div className="pbar-fill" style={{ width:`${pct||0}%`,background:color }}/>
+                      </div>
+                    </div>
+                    <span style={{ fontSize:'10px',fontWeight:600,color:'var(--ct3)',flexShrink:0,minWidth:40,textAlign:'right' }}>{s.class}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {loading ? (
-          <p style={{ padding:'24px',fontSize:13,color:'var(--ct3)' }}>Loading…</p>
-        ) : students.length===0 ? (
-          <p style={{ padding:'32px',textAlign:'center',fontSize:13,color:'var(--ct3)' }}>No students yet. Go to Students → Add Student.</p>
-        ) : (
-          <div style={{ padding:'14px 20px',display:'flex',flexDirection:'column',gap:12 }}>
-            {sstats.slice(0,6).map((s,i)=>{
-              const pct=s.t>0?Math.round((s.p/s.t)*100):null;
-              const color=!pct?'#C0B8A8':pct>=75?'#7EAD7C':'#E88090';
-              return (
-                <div key={i} style={{ display:'flex',alignItems:'center',gap:12 }}>
-                  <div style={{ width:32,height:32,borderRadius:99,background:`${color}18`,border:`1px solid ${color}28`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color,flexShrink:0 }}>
-                    {s.name[0]}
-                  </div>
-                  <div style={{ flex:1,minWidth:0 }}>
-                    <div style={{ display:'flex',justifyContent:'space-between',marginBottom:5 }}>
-                      <p style={{ fontSize:'13px',fontWeight:600,color:'var(--ct1)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis' }}>{s.name}</p>
-                      <span style={{ fontSize:'11px',fontWeight:700,color,flexShrink:0,marginLeft:8 }}>{pct!==null?`${pct}%`:'—'}</span>
-                    </div>
-                    <div className="pbar-track">
-                      <div className="pbar-fill" style={{ width:`${pct||0}%`,background:color }}/>
-                    </div>
-                  </div>
-                  <span style={{ fontSize:'10px',fontWeight:600,color:'var(--ct3)',flexShrink:0,minWidth:40,textAlign:'right' }}>{s.class}</span>
-                </div>
-              );
-            })}
+        {/* Audit Logs */}
+        <div className="card anim-up d5">
+          <div style={{ padding:'16px 20px',borderBottom:'1px solid var(--c-edge)',display:'flex',alignItems:'center',justifyContent:'space-between' }}>
+            <div>
+              <p style={{ fontSize:'14px',fontWeight:700,color:'var(--ct1)' }}>Recent Activity</p>
+              <p style={{ fontSize:'11px',color:'var(--ct3)',fontWeight:500 }}>Latest audit logs</p>
+            </div>
+            <Activity size={18} style={{ color:'var(--sky)' }}/>
           </div>
-        )}
+
+          {logL ? (
+            <p style={{ padding:'24px',fontSize:13,color:'var(--ct3)' }}>Loading…</p>
+          ) : logs.length===0 ? (
+            <p style={{ padding:'32px',textAlign:'center',fontSize:13,color:'var(--ct3)' }}>No recent activity.</p>
+          ) : (
+            <div style={{ padding:'14px 20px',display:'flex',flexDirection:'column',gap:12,maxHeight:320,overflowY:'auto' }}>
+              {logs.slice(0, 10).map((log, i) => (
+                <div key={log.id} style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
+                  <div style={{ width:8, height:8, borderRadius:4, background:'var(--sky)', marginTop:6, flexShrink:0 }}/>
+                  <div>
+                    <p style={{ fontSize:'13px', fontWeight:600, color:'var(--ct1)' }}>{log.action}</p>
+                    <p style={{ fontSize:'11px', color:'var(--ct3)' }}>{log.timestamp ? new Date(log.timestamp.toDate()).toLocaleString() : 'Just now'}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Low attendance alert */}

@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard, Users, CalendarCheck, BarChart3, LogOut,
-  GraduationCap, Menu, Brain, QrCode, MapPin, Sun, Moon,
+  GraduationCap, Menu, Brain,
   ChevronLeft, ChevronRight, Settings
 } from 'lucide-react';
 
@@ -12,8 +12,6 @@ const NAV = [
   { to:'/students',   icon:Users,            label:'Students',       dot:'#7BB5E8' },
   { to:'/attendance', icon:CalendarCheck,    label:'Attendance',     dot:'#E08B6A' },
   { to:'/insights',   icon:Brain,            label:'Smart Insights', dot:'#9B8AE8' },
-  { to:'/qr-checkin', icon:QrCode,           label:'QR Check-in',   dot:'#E8BC60' },
-  { to:'/geofence',   icon:MapPin,           label:'Geofence',       dot:'#E88090' },
   { to:'/reports',    icon:BarChart3,        label:'Reports',        dot:'#6DBDAC' },
   { to:'/settings',   icon:Settings,         label:'Settings',       dot:'#8B5CF6' },
 ];
@@ -46,32 +44,15 @@ function NavItem({ item, mini, onClick }) {
 }
 
 export default function Layout({ children }) {
-  const { user, userProfile, logout } = useAuth();
+  const { user, userProfile, activeClassIndex, setActiveClassIndex, logout } = useAuth();
   const [mini, setMini] = useState(false);
   const [mob, setMob] = useState(false);
-  const [theme, setTheme] = useState(()=>localStorage.getItem('ts2-theme')||'dark');
-  const [midnightToast, setMidnightToast] = useState(false);
-  const logoClickCount = useRef(0);
-  const logoClickTimer = useRef(null);
-
-  function handleLogoTripleClick() {
-    logoClickCount.current += 1;
-    clearTimeout(logoClickTimer.current);
-    logoClickTimer.current = setTimeout(() => { logoClickCount.current = 0; }, 800);
-    if (logoClickCount.current >= 3) {
-      logoClickCount.current = 0;
-      const isMidnight = document.documentElement.getAttribute('data-theme') === 'midnight';
-      const next = isMidnight ? theme : 'midnight';
-      document.documentElement.setAttribute('data-theme', next);
-      setMidnightToast(!isMidnight);
-      setTimeout(() => setMidnightToast(false), 3000);
-    }
-  }
 
   useEffect(()=>{
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('ts2-theme', theme);
-  }, [theme]);
+    // Force Light Creme theme for SJBIT branding
+    document.documentElement.setAttribute('data-theme', 'light');
+    localStorage.setItem('ts2-theme', 'light');
+  }, []);
 
   const initial = (userProfile?.teacherName||user?.email||'?')[0].toUpperCase();
 
@@ -79,20 +60,14 @@ export default function Layout({ children }) {
     <div style={{ display:'flex', flexDirection:'column', height:'100%', overflow:'hidden' }}>
       {/* Logo */}
       <div style={{ display:'flex', alignItems:'center', gap:10, padding:'18px 14px 16px', borderBottom:'1px solid var(--nav-edge)' }}>
-        <div style={{ width:34,height:34,borderRadius:10,flexShrink:0, background:'linear-gradient(135deg,#7EAD7C,#6DBDAC)', display:'flex',alignItems:'center',justifyContent:'center', boxShadow:'0 3px 10px rgba(126,173,124,.35)', cursor:'pointer', userSelect:'none' }}
-          onClick={handleLogoTripleClick} title="TS:2 (triple-click for secret mode)">
+        <div style={{ width:34,height:34,borderRadius:10,flexShrink:0, background:'linear-gradient(135deg,#7EAD7C,#6DBDAC)', display:'flex',alignItems:'center',justifyContent:'center', boxShadow:'0 3px 10px rgba(126,173,124,.35)', cursor:'default', userSelect:'none' }}>
           <GraduationCap size={18} color="#fff"/>
         </div>
         {!isMini && (
-          <>
-            <div style={{ flex:1 }}>
-              <p style={{ fontSize:'15px',fontWeight:900,letterSpacing:'-.025em',color:'var(--nav-t1)' }}>TS:2</p>
-              <p style={{ fontSize:'9px',fontWeight:600,color:'var(--nav-t3)',letterSpacing:'.1em',textTransform:'uppercase' }}>Smart Presence</p>
-            </div>
-            <button className="icon-btn" onClick={()=>setTheme(t=>t==='dark'?'light':'dark')}>
-              {theme==='dark'?<Sun size={14}/>:<Moon size={14}/>}
-            </button>
-          </>
+          <div style={{ flex:1 }}>
+            <p style={{ fontSize:'15px',fontWeight:900,letterSpacing:'-.025em',color:'var(--nav-t1)' }}>SJBIT</p>
+            <p style={{ fontSize:'9px',fontWeight:600,color:'var(--nav-t3)',letterSpacing:'.1em',textTransform:'uppercase' }}>Attendance Portal</p>
+          </div>
         )}
       </div>
 
@@ -104,13 +79,29 @@ export default function Layout({ children }) {
       {/* Team */}
       {!isMini && (
         <div style={{ margin:'0 8px 8px',padding:'9px 12px',borderRadius:12,background:'rgba(126,173,124,.08)',border:'1px solid rgba(126,173,124,.15)',textAlign:'center' }}>
-          <p style={{ fontSize:'9px',fontWeight:800,letterSpacing:'.12em',textTransform:'uppercase',color:'var(--sage)',marginBottom:3 }}>Team TS:2</p>
-          <p style={{ fontSize:'11px',color:'var(--nav-t2)',fontWeight:500 }}>Sagar · Thejas · Supriya · Thousif</p>
+          <p style={{ fontSize:'9px',fontWeight:800,letterSpacing:'.12em',textTransform:'uppercase',color:'var(--sage)',marginBottom:3 }}>SJBIT Admin</p>
+          <p style={{ fontSize:'11px',color:'var(--nav-t2)',fontWeight:500 }}>Smart Attendance System</p>
         </div>
       )}
 
       {/* User */}
       <div style={{ padding:'8px 8px 14px',borderTop:'1px solid var(--nav-edge)' }}>
+        {userProfile?.classes && userProfile.classes.length > 0 && !isMini && (
+          <div style={{ marginBottom: 8, padding: '0 8px' }}>
+            <p style={{ fontSize:'9px', fontWeight:700, color:'var(--nav-t3)', marginBottom:4, textTransform:'uppercase', letterSpacing:'.05em' }}>Active Class</p>
+            <select
+              value={activeClassIndex}
+              onChange={(e) => setActiveClassIndex(Number(e.target.value))}
+              style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1px solid var(--nav-edge)', background: 'rgba(255,255,255,0.04)', color: 'var(--nav-t1)', fontSize: '11px', fontWeight: 600, outline: 'none' }}
+            >
+              {userProfile.classes.map((cls, idx) => (
+                <option key={idx} value={idx} style={{ color: '#000' }}>
+                  {cls.subjectName} · {cls.section}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         {!isMini && (
           <div style={{ display:'flex',alignItems:'center',gap:9,padding:'8px 10px',marginBottom:8,borderRadius:12,background:'rgba(255,255,255,0.04)',border:'1px solid var(--nav-edge)' }}>
             <div style={{ width:30,height:30,borderRadius:8,flexShrink:0,background:'linear-gradient(135deg,#7EAD7C,#6DBDAC)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:800,color:'#fff' }}>
@@ -120,9 +111,9 @@ export default function Layout({ children }) {
               <p style={{ fontSize:'12px',fontWeight:700,color:'var(--nav-t1)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis' }}>
                 {userProfile?.teacherName||user?.email}
               </p>
-              {userProfile?.subjectName && (
+              {(userProfile?.classes ? userProfile.classes[activeClassIndex]?.subjectName : userProfile?.subjectName) && (
                 <p style={{ fontSize:'10px',color:'var(--sage)',fontWeight:600,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis' }}>
-                  {userProfile.subjectName} · {userProfile.semester}
+                  {userProfile?.classes ? userProfile.classes[activeClassIndex]?.subjectName : userProfile?.subjectName} · {userProfile?.classes ? userProfile.classes[activeClassIndex]?.semester : userProfile?.semester}
                 </p>
               )}
             </div>
@@ -177,10 +168,7 @@ export default function Layout({ children }) {
           <div style={{ width:28,height:28,borderRadius:8,background:'linear-gradient(135deg,#7EAD7C,#6DBDAC)',display:'flex',alignItems:'center',justifyContent:'center' }}>
             <GraduationCap size={14} color="#fff"/>
           </div>
-          <span style={{ fontWeight:900,fontSize:'14px',flex:1,color:'var(--nav-t1)',letterSpacing:'-.02em' }}>TS:2</span>
-          <button className="icon-btn" onClick={()=>setTheme(t=>t==='dark'?'light':'dark')}>
-            {theme==='dark'?<Sun size={14}/>:<Moon size={14}/>}
-          </button>
+          <span style={{ fontWeight:900,fontSize:'14px',flex:1,color:'var(--nav-t1)',letterSpacing:'-.02em' }}>SJBIT</span>
         </header>
 
         <main style={{ flex:1,overflowY:'auto',padding:'20px 20px 100px' }}>
@@ -214,19 +202,6 @@ export default function Layout({ children }) {
         @media(max-width:767px){#mob-hdr{display:flex!important}#mob-nav{display:flex!important}}
       `}</style>
 
-      {midnightToast && (
-        <div style={{
-          position:'fixed',bottom:'1.5rem',left:'50%',transform:'translateX(-50%)',
-          padding:'12px 24px',borderRadius:16,
-          background:'linear-gradient(135deg,#00FFD1,#00B4D8)',
-          color:'#060B18',fontWeight:800,fontSize:'13px',
-          display:'flex',alignItems:'center',gap:8,
-          boxShadow:'0 4px 24px rgba(0,255,200,.4)',zIndex:99,
-          animation:'fadeUp .4s ease both',whiteSpace:'nowrap',
-        }}>
-          🌙 Midnight Glass activated! Triple-click again to exit.
-        </div>
-      )}
     </div>
   );
 }

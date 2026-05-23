@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { ShieldCheck, LayoutDashboard, Users, GraduationCap, BarChart3, LogOut, Sun, Moon, Menu, X, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, Users, GraduationCap, BarChart3, LogOut, Menu, X, ChevronLeft, ChevronRight, Settings, Upload, Megaphone } from 'lucide-react';
 
 const ADMIN_NAV = [
   { key:'overview',  icon:LayoutDashboard, label:'Overview',       dot:'#6366f1' },
   { key:'teachers',  icon:GraduationCap,   label:'All Teachers',   dot:'#10b981' },
   { key:'students',  icon:Users,           label:'All Students',   dot:'#7BB5E8' },
   { key:'reports',   icon:BarChart3,       label:'System Reports', dot:'#f59e0b' },
+  { key:'onboarding',icon:Upload,          label:'Bulk Onboard',   dot:'#ec4899' },
+  { key:'broadcasts',icon:Megaphone,       label:'Broadcasts',     dot:'#14b8a6' },
   { key:'settings',  icon:Settings,        label:'Settings',       dot:'#8B5CF6' },
 ];
 
@@ -14,12 +16,10 @@ export default function AdminLayout({ children, active, onNav }) {
   const { user, logout } = useAuth();
   const [mini, setMini] = useState(false);
   const [mob, setMob] = useState(false);
-  const [theme, setTheme] = useState(()=>localStorage.getItem('ts2-theme')||'dark');
-
   useEffect(()=>{
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('ts2-theme', theme);
-  },[theme]);
+    document.documentElement.setAttribute('data-theme', 'light');
+    localStorage.setItem('ts2-theme', 'light');
+  },[]);
 
   function Rail({ isMini, onNavClick }) {
     return (
@@ -32,7 +32,7 @@ export default function AdminLayout({ children, active, onNav }) {
           {!isMini && (
             <div>
               <p style={{ fontWeight:900, fontSize:'13px', color:'var(--nav-t1)', letterSpacing:'-.02em', lineHeight:1 }}>ADMIN</p>
-              <p style={{ fontSize:'9px', fontWeight:600, color:'#6366f1', letterSpacing:'.08em', textTransform:'uppercase' }}>TS:2 CONTROL</p>
+              <p style={{ fontSize:'9px', fontWeight:600, color:'#6366f1', letterSpacing:'.08em', textTransform:'uppercase' }}>SJBIT CONTROL</p>
             </div>
           )}
         </div>
@@ -72,12 +72,8 @@ export default function AdminLayout({ children, active, onNav }) {
             </div>
           )}
           <div style={{ display:'flex', gap:6 }}>
-            <button onClick={()=>setTheme(t=>t==='dark'?'light':'dark')}
-              style={{ flex:isMini?'auto':1, height:36, borderRadius:10, border:'1px solid var(--nav-edge)', background:'transparent', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--nav-t2)' }}>
-              {theme==='dark'?<Sun size={14}/>:<Moon size={14}/>}
-            </button>
             <button onClick={logout}
-              style={{ flex:isMini?'auto':2, height:36, borderRadius:10, border:'1px solid var(--nav-edge)', background:'transparent', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6, color:'var(--nav-t2)', fontSize:'12px', fontWeight:600, fontFamily:'inherit' }}>
+              style={{ flex:1, height:36, borderRadius:10, border:'1px solid var(--nav-edge)', background:'transparent', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6, color:'var(--nav-t2)', fontSize:'12px', fontWeight:600, fontFamily:'inherit' }}>
               <LogOut size={14}/>
               {!isMini && 'Sign Out'}
             </button>
@@ -116,9 +112,6 @@ export default function AdminLayout({ children, active, onNav }) {
             <ShieldCheck size={14} color="#fff"/>
           </div>
           <span style={{ fontWeight:900,fontSize:'14px',flex:1,color:'var(--nav-t1)' }}>Admin Panel</span>
-          <button onClick={()=>setTheme(t=>t==='dark'?'light':'dark')} style={{ width:34,height:34,borderRadius:10,border:'1px solid var(--nav-edge)',background:'transparent',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--nav-t2)' }}>
-            {theme==='dark'?<Sun size={14}/>:<Moon size={14}/>}
-          </button>
         </header>
 
         <main style={{ flex:1,overflowY:'auto',padding:'20px 20px 100px' }}>

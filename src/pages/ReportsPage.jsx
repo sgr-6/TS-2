@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { useStudents, useAllAttendance } from '../hooks/useFirestore';
 import { BarChart3, Download, FileText, TrendingUp } from 'lucide-react';
 import {
@@ -14,9 +15,13 @@ function getPercentage(present, total) {
   return Math.round((present / total) * 100);
 }
 
-function downloadCSV(rows, filename) {
-  const header = ['Name', 'Roll No', 'Class', 'Present', 'Absent', 'Total', 'Percentage'];
-  const csv = [header, ...rows.map((r) => [r.name, r.rollNo, r.class, r.present, r.absent, r.total, `${r.pct}%`])]
+function downloadCSV(rows, filename, subjectColumns = []) {
+  const header = ['Name', 'Roll No', 'Class', ...subjectColumns, 'Present', 'Absent', 'Medical', 'Duty', 'Total', 'Overall %'];
+  const csv = [header, ...rows.map((r) => [
+      r.name, r.rollNo, r.class,
+      ...subjectColumns.map(sub => r.subjPcts?.[sub] !== undefined ? `${r.subjPcts[sub]}%` : '—'),
+      r.present, r.absent, r.medical, r.duty, r.total, `${r.pct}%`
+    ])]
     .map((row) => row.join(','))
     .join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
@@ -26,19 +31,23 @@ function downloadCSV(rows, filename) {
   URL.revokeObjectURL(url);
 }
 
-function downloadPDF(rows, title) {
+function downloadPDF(rows, title, subjectColumns = []) {
   const doc = new jsPDF();
   doc.setFontSize(18);
   doc.setTextColor(79, 70, 229);
-  doc.text('TS:2 — ' + title, 14, 18);
+  doc.text('SJBIT — ' + title, 14, 18);
   doc.setFontSize(10);
   doc.setTextColor(100, 116, 139);
   doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 26);
   autoTable(doc, {
     startY: 32,
-    head: [['Name', 'Roll No', 'Class', 'Present', 'Absent', 'Total', '%']],
-    body: rows.map((r) => [r.name, r.rollNo, r.class, r.present, r.absent, r.total, `${r.pct}%`]),
-    styles: { fontSize: 10 },
+    head: [['Name', 'Roll No', 'Class', ...subjectColumns, 'Total', 'Overall %']],
+    body: rows.map((r) => [
+      r.name, r.rollNo, r.class,
+      ...subjectColumns.map(sub => r.subjPcts?.[sub] !== undefined ? `${r.subjPcts[sub]}%` : '—'),
+      r.total, `${r.pct}%`
+    ]),
+    styles: { fontSize: 8 },
     headStyles: { fillColor: [79, 70, 229], textColor: 255 },
     alternateRowStyles: { fillColor: [248, 250, 252] },
   });
@@ -58,8 +67,11 @@ const CustomBarTooltip = ({ active, payload, label }) => {
 };
 
 export default function ReportsPage() {
+  const { userProfile, activeClass } = useAuth();
   const { students, loading: sLoading } = useStudents();
-  const { records, loading: rLoading } = useAllAttendance();
+  
+  const classId = activeClass ? `${activeClass.semester} - Section ${activeClass.section}` : (userProfile?.className || null);
+  const { records, loading: rLoading } = useAllAttendance(classId);
   const [filterClass, setFilterClass] = useState('all');
 
   const loading = sLoading || rLoading;
@@ -72,45 +84,74 @@ export default function ReportsPage() {
   const reportRows = useMemo(() => {
     const byId = {};
     students.forEach((s) => {
-      byId[s.id] = { ...s, present: 0, absent: 0, total: 0 };
+      byId[s.id] = { ...s, present: 0, absent: 0, medical: 0, duty: 0, total: 0, subjects: {} };
     });
     records.forEach((r) => {
       if (byId[r.studentId]) {
-        byId[r.studentId].total++;
-        if (r.status === 'present') byId[r.studentId].present++;
-        else byId[r.studentId].absent++;
+        const sId = r.studentId;
+        const subj = r.subject || 'Unknown Subject';
+        byId[sId].total++;
+        if (!byId[sId].subjects[subj]) byId[sId].subjects[subj] = { present: 0, absent: 0, medical: 0, duty: 0, total: 0 };
+        byId[sId].subjects[subj].total++;
+
+        if (r.status === 'present') { byId[sId].present++; byId[sId].subjects[subj].present++; }
+        else if (r.status === 'medical') { byId[sId].medical++; byId[sId].subjects[subj].medical++; }
+        else if (r.status === 'duty') { byId[sId].duty++; byId[sId].subjects[subj].duty++; }
+        else { byId[sId].absent++; byId[sId].subjects[subj].absent++; }
       }
     });
+
     return Object.values(byId)
-      .map((r) => ({ ...r, pct: getPercentage(r.present, r.total) }))
+      .map((r) => {
+        const subjPcts = {};
+        Object.entries(r.subjects).forEach(([sub, counts]) => {
+          subjPcts[sub] = getPercentage(counts.present + counts.duty + counts.medical, counts.total);
+        });
+        return { ...r, pct: getPercentage(r.present + r.duty + r.medical, r.total), subjPcts };
+      })
       .filter((r) => filterClass === 'all' || r.class === filterClass)
       .sort((a, b) => b.pct - a.pct);
   }, [students, records, filterClass]);
+
+  const subjectColumns = useMemo(() => {
+    if (filterClass === 'all') return [];
+    const subjects = new Set();
+    records.forEach(r => {
+      const student = students.find(s => s.id === r.studentId);
+      if (student && student.class === filterClass) subjects.add(r.subject || 'Unknown Subject');
+    });
+    return Array.from(subjects).sort();
+  }, [records, students, filterClass]);
 
   // Weekly trend data
   const weeklyData = useMemo(() => {
     const byDate = {};
     records.forEach((r) => {
-      if (!byDate[r.date]) byDate[r.date] = { present: 0, total: 0 };
+      if (!byDate[r.date]) byDate[r.date] = { presentAndExcused: 0, total: 0 };
       byDate[r.date].total++;
-      if (r.status === 'present') byDate[r.date].present++;
+      if (['present', 'medical', 'duty'].includes(r.status)) byDate[r.date].presentAndExcused++;
     });
     return Object.entries(byDate)
       .sort(([a], [b]) => a.localeCompare(b))
       .slice(-10)
-      .map(([date, { present, total }]) => ({
+      .map(([date, { presentAndExcused, total }]) => ({
         date: new Date(date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
-        pct: total > 0 ? Math.round((present / total) * 100) : 0,
+        pct: total > 0 ? Math.round((presentAndExcused / total) * 100) : 0,
       }));
   }, [records]);
 
-  // Pie data: overall present vs absent
+  // Pie data: overall breakdown
   const totalPresent = reportRows.reduce((a, r) => a + r.present, 0);
   const totalAbsent = reportRows.reduce((a, r) => a + r.absent, 0);
+  const totalMedical = reportRows.reduce((a, r) => a + r.medical, 0);
+  const totalDuty = reportRows.reduce((a, r) => a + r.duty, 0);
+
   const pieData = [
     { name: 'Present', value: totalPresent, color: '#10b981' },
     { name: 'Absent', value: totalAbsent, color: '#ef4444' },
   ];
+  if (totalMedical > 0) pieData.push({ name: 'Medical', value: totalMedical, color: '#0ea5e9' });
+  if (totalDuty > 0) pieData.push({ name: 'Duty', value: totalDuty, color: '#eab308' });
 
   const filename = `attendance_${filterClass}_${new Date().toISOString().split('T')[0]}`;
 
@@ -127,7 +168,7 @@ export default function ReportsPage() {
           <button
             id="download-csv-btn"
             className="btn btn-secondary"
-            onClick={() => downloadCSV(reportRows, `${filename}.csv`)}
+            onClick={() => downloadCSV(reportRows, `${filename}.csv`, subjectColumns)}
             disabled={reportRows.length === 0}
           >
             <FileText size={16} /> CSV
@@ -135,7 +176,7 @@ export default function ReportsPage() {
           <button
             id="download-pdf-btn"
             className="btn btn-primary"
-            onClick={() => downloadPDF(reportRows, filterClass === 'all' ? 'All Classes' : `Class ${filterClass}`)}
+            onClick={() => downloadPDF(reportRows, filterClass === 'all' ? 'All Classes' : `Class ${filterClass}`, subjectColumns)}
             disabled={reportRows.length === 0}
           >
             <Download size={16} /> PDF
@@ -250,8 +291,11 @@ export default function ReportsPage() {
                   <th>Name</th>
                   <th>Roll No</th>
                   <th>Class</th>
+                  {subjectColumns.map(s => <th key={s}>{s}</th>)}
                   <th>Present</th>
                   <th>Absent</th>
+                  <th>Medical</th>
+                  <th>Duty</th>
                   <th>Total</th>
                   <th>%</th>
                   <th>Status</th>
@@ -265,8 +309,15 @@ export default function ReportsPage() {
                       <td style={{ color: 'var(--ct1)', fontWeight: 600 }}>{r.name}</td>
                       <td style={{ color: 'var(--ct2)' }}>{r.rollNo}</td>
                       <td style={{ color: 'var(--ct2)' }}>{r.class}</td>
+                      {subjectColumns.map(sub => (
+                        <td key={sub} style={{ color: r.subjPcts?.[sub] >= 75 ? 'var(--sage)' : 'var(--rose)', fontWeight: 600 }}>
+                          {r.subjPcts?.[sub] !== undefined ? `${r.subjPcts[sub]}%` : '—'}
+                        </td>
+                      ))}
                       <td style={{ color: 'var(--sage)', fontWeight: 600 }}>{r.present}</td>
                       <td style={{ color: 'var(--rose)', fontWeight: 600 }}>{r.absent}</td>
+                      <td style={{ color: 'var(--sky)', fontWeight: 600 }}>{r.medical}</td>
+                      <td style={{ color: 'var(--gold)', fontWeight: 600 }}>{r.duty}</td>
                       <td style={{ color: 'var(--ct3)' }}>{r.total}</td>
                       <td>
                         <div className="flex items-center gap-2">

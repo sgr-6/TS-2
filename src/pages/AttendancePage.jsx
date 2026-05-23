@@ -4,13 +4,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { CalendarDays, Save, CheckCircle2, XCircle, Mic, MicOff } from 'lucide-react';
 
 export default function AttendancePage() {
-  const { user } = useAuth();
+  const { user, userProfile, activeClass } = useAuth();
   const today = new Date().toISOString().split('T')[0];
   const [date, setDate] = useState(today);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const { students, loading: sL } = useStudents();
-  const { records, loading: rL } = useAttendanceForDate(date);
+  // Fetch attendance records for this specific class
+  const classId = activeClass ? `${activeClass.semester} - Section ${activeClass.section}` : (userProfile?.className || 'Unknown Class');
+  const { records, loading: rL } = useAttendanceForDate(date, classId);
   const [overrides, setOverrides] = useState({});
   const [listening, setListening] = useState(false);
   const [voiceFeedback, setVoiceFeedback] = useState('');
@@ -30,6 +32,8 @@ export default function AttendancePage() {
         if (t.includes(n) || t.includes(n.split(' ')[0])) {
           if (t.includes('present')) { setOverrides(p=>({...p,[s.id]:'present'})); setVoiceFeedback(`Marked ${s.name} present`); matched=true; }
           else if (t.includes('absent')) { setOverrides(p=>({...p,[s.id]:'absent'})); setVoiceFeedback(`Marked ${s.name} absent`); matched=true; }
+          else if (t.includes('medical')) { setOverrides(p=>({...p,[s.id]:'medical'})); setVoiceFeedback(`Marked ${s.name} medical`); matched=true; }
+          else if (t.includes('duty') || t.includes('sports')) { setOverrides(p=>({...p,[s.id]:'duty'})); setVoiceFeedback(`Marked ${s.name} duty`); matched=true; }
         }
       });
       if (!matched) setVoiceFeedback("Didn't catch the name. Say again.");
@@ -49,24 +53,29 @@ export default function AttendancePage() {
 
   const isWeekend = useMemo(() => { const d=new Date(date+'T00:00:00'); return d.getDay()===0||d.getDay()===6; }, [date]);
 
-  function toggleStudent(id) {
-    if (records.some(r=>r.studentId===id&&r.status==='absent')) return;
-    setOverrides(p=>({...p,[id]:(statusMap[id]||'absent')==='present'?'absent':'present'}));
+  function setStudentStatus(id, newStatus) {
+    setOverrides(p=>({...p,[id]:newStatus}));
     setSaved(false);
   }
+
   function markAll(status) {
     const o={};
     students.forEach(s=>{
-      const saved=records.some(r=>r.studentId===s.id&&r.status==='absent');
-      if(status==='present'&&saved) return;
       o[s.id]=status;
     });
     setOverrides(o); setSaved(false);
   }
+
+  // ... (leaving other code alone, just targeting handleSave)
   async function handleSave() {
     if(!user) return; setSaving(true);
+    const subName = activeClass ? activeClass.subjectName : (userProfile?.subjectName || 'Unknown Subject');
+    const cId = activeClass ? `${activeClass.semester} - Section ${activeClass.section}` : (userProfile?.className || 'Unknown Class');
+
     try {
-      await Promise.all(students.map(s=>saveAttendance(date,s.id,statusMap[s.id]||'absent',user.uid)));
+      await Promise.all(students.map(s=>saveAttendance(
+        date, s.id, statusMap[s.id]||'absent', user.uid, userProfile?.teacherName || 'Teacher', subName, cId
+      )));
       setOverrides({}); setSaved(true); setTimeout(()=>setSaved(false),3000);
     } finally { setSaving(false); }
   }
@@ -152,21 +161,25 @@ export default function AttendancePage() {
       ) : (
         <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
           {students.map((s, i) => {
-            const isPresent = (statusMap[s.id]||'absent') === 'present';
-            const savedAbsent = records.some(r=>r.studentId===s.id&&r.status==='absent');
-            const col = isPresent ? 'var(--sage)' : 'var(--ct4)';
+            const currentStatus = statusMap[s.id]||'absent';
+            const statusColorMap = {
+              'present': 'var(--sage)',
+              'absent': 'var(--rose)',
+              'medical': 'var(--sky)',
+              'duty': 'var(--gold)'
+            };
+            const col = statusColorMap[currentStatus];
+            
             return (
-              <div key={s.id} className="card" onClick={()=>{ if(!savedAbsent) toggleStudent(s.id); }}
+              <div key={s.id} className="card"
                 style={{
                   padding:'14px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12,
-                  cursor: savedAbsent ? 'not-allowed' : 'pointer',
-                  borderColor: isPresent ? 'var(--sage-b)' : 'var(--c-edge)',
-                  background: isPresent ? 'var(--sage-l)' : 'var(--card)',
-                  opacity: savedAbsent ? 0.75 : 1,
+                  borderColor: currentStatus !== 'absent' ? `${col}44` : 'var(--c-edge)',
+                  background: currentStatus !== 'absent' ? `${col}11` : 'var(--card)',
                   animationDelay:`${i*0.02}s`,
                 }}>
                 <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-                  <div style={{ width:38,height:38,borderRadius:10,flexShrink:0, background:`${isPresent?'var(--sage-l)':'var(--card2)'}`, border:`1px solid ${isPresent?'var(--sage-b)':'var(--c-edge)'}`, display:'flex',alignItems:'center',justifyContent:'center', fontSize:'13px',fontWeight:800,color:col }}>
+                  <div style={{ width:38,height:38,borderRadius:10,flexShrink:0, background:currentStatus!=='absent'?`${col}22`:'var(--card2)', border:`1px solid ${currentStatus!=='absent'?`${col}44`:'var(--c-edge)'}`, display:'flex',alignItems:'center',justifyContent:'center', fontSize:'13px',fontWeight:800,color:col }}>
                     {s.name[0].toUpperCase()}
                   </div>
                   <div>
@@ -174,16 +187,23 @@ export default function AttendancePage() {
                     <p style={{ fontSize:'11px', color:'var(--ct3)', fontWeight:500 }}>{s.rollNo} · {s.class}</p>
                   </div>
                 </div>
-                <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
-                  <span className="badge" style={{ background:isPresent?'var(--sage-l)':'var(--rose-l)', color:isPresent?'var(--sage)':'var(--rose)', border:`1px solid ${isPresent?'var(--sage-b)':'var(--rose-b)'}` }}>
-                    {isPresent?'Present':'Absent'}
-                  </span>
-                  {savedAbsent ? (
-                    <span style={{ fontSize:'11px',fontWeight:700,color:'var(--rose)',background:'var(--rose-l)',padding:'4px 10px',borderRadius:99,border:'1px solid var(--rose-b)' }}>Saved Absent</span>
-                  ) : (
-                    <button className={`toggle ${isPresent?'active':''}`} role="switch" aria-checked={isPresent}
-                      aria-label={`Toggle ${s.name}`} onClick={e=>{e.stopPropagation();toggleStudent(s.id);}}/>
-                  )}
+                
+                <div style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0, background:'var(--card2)', padding:4, borderRadius:12, border:'1px solid var(--c-edge)' }}>
+                  {[
+                    {k:'present', l:'Present', c:'var(--sage)', bg:'var(--sage-l)'},
+                    {k:'absent', l:'Absent', c:'var(--rose)', bg:'var(--rose-l)'},
+                    {k:'medical', l:'Medical', c:'var(--sky)', bg:'var(--sky-l)'},
+                    {k:'duty', l:'Duty', c:'var(--gold)', bg:'var(--gold-l)'}
+                  ].map(btn => (
+                    <button key={btn.k} onClick={(e)=>{e.stopPropagation();setStudentStatus(s.id,btn.k);}}
+                      style={{
+                        padding:'6px 12px', fontSize:'11px', fontWeight:700, borderRadius:8, border:'none', cursor:'pointer', transition:'all 0.2s',
+                        background: currentStatus===btn.k ? btn.bg : 'transparent',
+                        color: currentStatus===btn.k ? btn.c : 'var(--ct3)'
+                      }}>
+                      {btn.l}
+                    </button>
+                  ))}
                 </div>
               </div>
             );

@@ -1,59 +1,16 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useStudents, useAllAttendance, useAttendanceForDate } from '../hooks/useFirestore';
+import { useStudents, useAllAttendance, useAttendanceForDate, useStudentDetailedAttendance } from '../hooks/useFirestore';
 import { useAuth } from '../contexts/AuthContext';
 import { UserPlus, Pencil, Trash2, X, Check, Search, Users, Flame, Sparkles, Activity, Calendar, ChevronRight } from 'lucide-react';
-
-/* ════════════════════════════════════
-   CONFETTI
-════════════════════════════════════ */
-function launchConfetti() {
-  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-  const canvas = document.createElement('canvas');
-  Object.assign(canvas.style, { position:'fixed',top:0,left:0,width:'100%',height:'100%',zIndex:9999,pointerEvents:'none' });
-  document.body.appendChild(canvas);
-  const ctx = canvas.getContext('2d');
-  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-  /* Neon palette for dark mode, warm palette for light */
-  const COLORS = isDark
-    ? ['#4ADE80','#7DD3FC','#F472B6','#00FFD1','#FDE047','#818CF8','#FB7185','#38BDF8']
-    : ['#7EAD7C','#06B6D4','#F59E0B','#EC4899','#8B5CF6','#E88090','#FFD700'];
-  const particles = Array.from({length:200},()=>({
-    x:Math.random()*canvas.width, y:Math.random()*-canvas.height,
-    w:Math.random()*14+6, h:Math.random()*7+4,
-    color:COLORS[Math.floor(Math.random()*COLORS.length)],
-    speed:Math.random()*4+2, angle:0, spin:(Math.random()-.5)*.18,
-    drift:(Math.random()-.5)*2,
-  }));
-  let frame=0, maxF=320;
-  function animate() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    particles.forEach(p=>{
-      p.y+=p.speed; p.angle+=p.spin; p.x+=p.drift;
-      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.angle);
-      ctx.fillStyle=p.color; ctx.globalAlpha=Math.max(0,1-frame/maxF);
-      ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.restore();
-    });
-    if(++frame<maxF) requestAnimationFrame(animate); else canvas.remove();
-  }
-  animate();
-}
 
 /* ════════════════════════════════════
    DYNAMIC GREETING
 ════════════════════════════════════ */
 function getGreeting(name) {
   const h = new Date().getHours();
-  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-  /* Midnight-specific message for dark mode (00:00 – 04:59) */
-  if (h < 5)  return isDark
-    ? { text:`Team TS:2 is in the zone! 🚀 Midnight sessions build great things.`, color:'var(--greet-night-color)' }
-    : { text:`Late night session? Team TS:2 is active! 🌙`, color:'#8B5CF6' };
   if (h < 12) return { text:`Good Morning, ${name}! ☀️`, color:'#F59E0B' };
   if (h < 17) return { text:`Good Afternoon, ${name}! 🌤️`, color:'#06B6D4' };
-  if (h < 21) return { text:`Good Evening, ${name}! 🌆`, color:'#F97316' };
-  return isDark
-    ? { text:`Team TS:2 is in the zone! 🚀 Midnight sessions build great things.`, color:'var(--greet-night-color)' }
-    : { text:`Late night session! Team TS:2 is still active 🌙`, color:'#8B5CF6' };
+  return { text:`Good Evening, ${name}! 🌆`, color:'#F97316' };
 }
 
 /* ════════════════════════════════════
@@ -70,7 +27,7 @@ function StudentModal({ student, onClose, onSave }) {
     e.preventDefault();
     if (!name.trim()||!rollNo.trim()||!cls.trim()) { setError('All fields are required.'); return; }
     setSaving(true);
-    try { await onSave({name:name.trim(),rollNo:rollNo.trim(),class:cls.trim()}); onClose(); }
+    try { await onSave({name:name.trim(),rollNo:rollNo.trim()}); onClose(); }
     catch(err) { setError(err.message); }
     finally { setSaving(false); }
   }
@@ -90,7 +47,6 @@ function StudentModal({ student, onClose, onSave }) {
         <form onSubmit={handleSubmit} style={{ display:'flex',flexDirection:'column',gap:14 }}>
           {[['Full Name','student-name-input','text','e.g. Arjun Sharma',name,setName],
             ['Roll Number','student-rollno-input','text','e.g. 1JB24IS131',rollNo,setRollNo],
-            ['Class / Section','student-class-input','text','e.g. 4C',cls,setCls],
           ].map(([lbl,id,type,ph,val,setter])=>(
             <div key={id}>
               <label style={{ display:'block',fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.07em',color:'var(--ct3)',marginBottom:6 }}>{lbl}</label>
@@ -109,29 +65,76 @@ function StudentModal({ student, onClose, onSave }) {
   );
 }
 
-/* ════════════════════════════════════
-   DESK SVG ILLUSTRATION
-════════════════════════════════════ */
-const DeskSVG = ({allPresent}) => (
-  <svg viewBox="0 0 120 90" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width:90,height:68 }}>
-    <rect x="10" y="45" width="100" height="10" rx="5" fill={allPresent?'#7EAD7C':'#C8C0B0'} opacity=".9"/>
-    <rect x="20" y="55" width="8" height="28" rx="4" fill={allPresent?'#5A9E58':'#A89880'}/>
-    <rect x="92" y="55" width="8" height="28" rx="4" fill={allPresent?'#5A9E58':'#A89880'}/>
-    {allPresent ? (
-      <>
-        <circle cx="60" cy="30" r="18" fill="#D1FAE5" stroke="#7EAD7C" strokeWidth="2"/>
-        <path d="M51 30l6 6 12-12" stroke="#7EAD7C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <text x="60" y="18" textAnchor="middle" fontSize="10" fill="#F59E0B">✨</text>
-      </>
-    ) : (
-      <>
-        <rect x="35" y="20" width="50" height="28" rx="6" fill="#E8E4DC" stroke="#C8C0B0" strokeWidth="1.5"/>
-        <rect x="42" y="27" width="36" height="3" rx="1.5" fill="#C8C0B0"/>
-        <rect x="42" y="33" width="24" height="3" rx="1.5" fill="#C8C0B0"/>
-      </>
-    )}
-  </svg>
-);
+function StudentProfileModal({ student, onClose }) {
+  const { records, loading } = useStudentDetailedAttendance(student.id);
+
+  const subjectStats = useMemo(() => {
+    if (!records) return [];
+    const grouped = {};
+    records.forEach(r => {
+      const code = r.subjectCode || r.subject || 'Unknown';
+      if (!grouped[code]) grouped[code] = { present: 0, total: 0, name: r.subject || 'Unknown' };
+      grouped[code].total++;
+      if (r.status === 'present') grouped[code].present++;
+    });
+    return Object.entries(grouped).map(([code, stats]) => ({
+      code,
+      name: stats.name,
+      present: stats.present,
+      total: stats.total,
+      pct: Math.round((stats.present / stats.total) * 100)
+    }));
+  }, [records]);
+
+  return (
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal-content anim-scale" style={{ maxWidth: 500 }}>
+        <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
+          <h2 style={{ fontSize:'1.2rem',fontWeight:800,color:'var(--ct1)' }}>
+            Student Profile
+          </h2>
+          <button onClick={onClose} style={{ width:36,height:36,borderRadius:10,border:'1px solid var(--c-edge)',background:'var(--card2)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--ct3)' }}>
+            <X size={16}/>
+          </button>
+        </div>
+
+        <div style={{ padding:'16px', background:'var(--card2)', borderRadius:12, marginBottom:16, border:'1px solid var(--c-edge)' }}>
+          <h3 style={{ fontSize:'1.1rem', fontWeight:800, color:'var(--ct1)' }}>{student.name}</h3>
+          <p style={{ fontSize:'13px', color:'var(--ct2)', fontWeight:600, marginTop:4 }}>{student.rollNo} • {student.department} • {student.semester} • Section {student.section}</p>
+        </div>
+
+        <h4 style={{ fontSize:'12px', fontWeight:800, textTransform:'uppercase', letterSpacing:'.08em', color:'var(--ct3)', marginBottom:12 }}>
+          Subject-wise Attendance Breakdown
+        </h4>
+
+        {loading ? (
+          <p style={{ fontSize:'13px', color:'var(--ct4)', textAlign:'center', padding:'2rem' }}>Loading subjects...</p>
+        ) : subjectStats.length === 0 ? (
+          <p style={{ fontSize:'13px', color:'var(--ct4)', textAlign:'center', padding:'2rem' }}>No attendance records found yet.</p>
+        ) : (
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            {subjectStats.map(stat => {
+              const col = stat.pct >= 75 ? 'var(--sage)' : stat.pct >= 60 ? '#f59e0b' : 'var(--rose)';
+              const bg = stat.pct >= 75 ? 'var(--sage-l)' : stat.pct >= 60 ? 'rgba(245,158,11,.15)' : 'var(--rose-l)';
+              return (
+                <div key={stat.code} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', background:'var(--card3)', borderRadius:10, border:'1px solid var(--c-edge)' }}>
+                  <div>
+                    <p style={{ fontSize:'13px', fontWeight:700, color:'var(--ct1)' }}>{stat.code}</p>
+                    <p style={{ fontSize:'11px', fontWeight:500, color:'var(--ct3)', marginTop:2 }}>{stat.present} / {stat.total} classes attended</p>
+                  </div>
+                  <div style={{ padding:'4px 12px', borderRadius:99, background:bg, color:col, border:`1px solid ${col}40`, fontSize:'13px', fontWeight:800 }}>
+                    {stat.pct}%
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 
 /* ════════════════════════════════════
    MAIN PAGE
@@ -144,11 +147,11 @@ export default function StudentsPage() {
   const { records: todayRecs } = useAttendanceForDate(today);
 
   const [showModal, setShowModal] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
+  const [profileTarget, setProfileTarget] = useState(null);
   const [search, setSearch] = useState('');
   const [deletingId, setDeletingId] = useState(null);
-  const [synergyCelebrated, setSynergyCelebrated] = useState(false);
-  const [synergyToast, setSynergyToast] = useState(false);
 
   const greeting = getGreeting(userProfile?.teacherName?.split(' ')[0] || 'Teacher');
 
@@ -165,36 +168,34 @@ export default function StudentsPage() {
     return result;
   },[records,students]);
 
-  /* ── Detect full class present → confetti ── */
+  /* ── Detect full class present ── */
   const allPresentToday = useMemo(()=>{
     if(!students.length||!todayRecs.length) return false;
     return students.every(s=>todayRecs.some(r=>r.studentId===s.id&&r.status==='present'));
   },[students,todayRecs]);
 
-  useEffect(()=>{
-    if(allPresentToday&&!synergyCelebrated){
-      setSynergyCelebrated(true);
-      setSynergyToast(true);
-      launchConfetti();
-      setTimeout(()=>setSynergyToast(false),5000);
-    }
-    if(!allPresentToday) setSynergyCelebrated(false);
-  },[allPresentToday]);
-
   const filtered = students.filter(s=>
     s.name.toLowerCase().includes(search.toLowerCase())||
-    s.rollNo.toLowerCase().includes(search.toLowerCase())||
-    (s.class||'').toLowerCase().includes(search.toLowerCase())
+    s.rollNo.toLowerCase().includes(search.toLowerCase())
   );
 
   function openAdd(){ setEditTarget(null); setShowModal(true); }
   function openEdit(s){ setEditTarget(s); setShowModal(true); }
+  function openProfile(s){ setProfileTarget(s); setShowProfile(true); }
   async function handleDelete(id){
     if(!window.confirm('Delete this student? Their attendance records will remain.')) return;
     setDeletingId(id);
     try{ await deleteStudent(id); }finally{ setDeletingId(null); }
   }
-  async function handleSave(data){ return editTarget?updateStudent(editTarget.id,data):addStudent(data); }
+  async function handleSave(data){ 
+    const fullData = {
+      ...data,
+      department: userProfile.department,
+      semester: userProfile.semester,
+      section: userProfile.section
+    };
+    return editTarget ? updateStudent(editTarget.id, fullData) : addStudent(fullData); 
+  }
 
   /* ── Recent activity list ── */
   const recentActivity = useMemo(()=>{
@@ -301,15 +302,15 @@ export default function StudentsPage() {
                       e.currentTarget.style.zIndex='';
                     }}
                   >
-                    <span style={{ fontSize:'13px', fontWeight:600, color:'var(--ct4)' }}>{i+1}</span>
-                    <span style={{ fontSize:'14px', fontWeight:700, color:'var(--ct1)' }}>{s.name}</span>
-                    <span style={{ fontSize:'12px', fontWeight:500, color:'var(--ct2)', fontVariantNumeric:'tabular-nums' }}>{s.rollNo}</span>
-                    <span>
+                    <span style={{ fontSize:'13px', fontWeight:600, color:'var(--ct4)' }} onClick={()=>openProfile(s)}>{i+1}</span>
+                    <span style={{ fontSize:'14px', fontWeight:700, color:'var(--ct1)', cursor:'pointer' }} onClick={()=>openProfile(s)}>{s.name}</span>
+                    <span style={{ fontSize:'12px', fontWeight:500, color:'var(--ct2)', fontVariantNumeric:'tabular-nums' }} onClick={()=>openProfile(s)}>{s.rollNo}</span>
+                    <span onClick={()=>openProfile(s)}>
                       <span style={{ display:'inline-flex', alignItems:'center', padding:'4px 12px', borderRadius:99, background:'rgba(6,182,212,.12)', color:'#06B6D4', border:'1px solid rgba(6,182,212,.25)', fontSize:'12px', fontWeight:700 }}>
-                        {s.class}
+                        {s.section}
                       </span>
                     </span>
-                    <span>
+                    <span onClick={()=>openProfile(s)}>
                       {streak>0 ? (
                         <span style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'4px 11px', borderRadius:99,
                           background:'var(--streak-bg)', color:'var(--streak-color)',
@@ -345,43 +346,8 @@ export default function StudentsPage() {
         )}
       </div>
 
-      {/* ── RIGHT: Easter Egg Panel ── */}
-      <div style={{ width:260, flexShrink:0, display:'flex', flexDirection:'column', gap:12 }} id="easter-panel">
-
-        <div className="card anim-up d2" style={{ padding:'16px 18px', overflow:'hidden', position:'relative' }}>
-          <p style={{ fontSize:'10px', fontWeight:800, textTransform:'uppercase', letterSpacing:'.1em', color:'var(--ct3)', marginBottom:12 }}>Interaction & Easter Eggs</p>
-          <p style={{ fontSize:'9px', fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', color:'var(--ct4)', marginBottom:10 }}>Actions</p>
-
-          {/* Desk illustration */}
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', padding:'12px 0 8px', borderRadius:14, background:'var(--card2)', border:'1px solid var(--c-edge)', marginBottom:12 }}>
-            <DeskSVG allPresent={allPresentToday}/>
-            <p style={{ fontSize:'11px', fontWeight:700, color: allPresentToday?'var(--sage)':'var(--ct3)', marginTop:6 }}>
-              {allPresentToday ? "Everyone's here! 🎉" : "Empty Desk"}
-            </p>
-          </div>
-
-          {/* Synergy button */}
-          <button
-            onClick={()=>{ if(allPresentToday){launchConfetti();setSynergyToast(true);setTimeout(()=>setSynergyToast(false),4000);} }}
-            style={{
-              width:'100%', padding:'10px', borderRadius:12, border:'none', fontFamily:'Plus Jakarta Sans,sans-serif',
-              background: allPresentToday ? 'linear-gradient(135deg,#7EAD7C,#6DBDAC)' : 'var(--card2)',
-              color: allPresentToday ? '#fff' : 'var(--ct3)',
-              fontWeight:700, fontSize:'12px', cursor: allPresentToday ? 'pointer':'default',
-              boxShadow: allPresentToday ? '0 4px 14px rgba(126,173,124,.35)':'none',
-              transition:'all .2s', marginBottom:10,
-            }}>
-            {allPresentToday ? '🎊 Celebrate Synergy!' : 'Awaiting Full Class…'}
-          </button>
-
-          {synergyToast && (
-            <div style={{ padding:'10px 12px', borderRadius:11, background:'linear-gradient(135deg,#D1FAE5,#A7F3D0)', border:'1px solid #6EE7B7', marginBottom:10 }}>
-              <p style={{ fontSize:'11px', fontWeight:800, color:'#065F46', textAlign:'center', lineHeight:1.5 }}>
-                🔥 Class Synergy 100%!<br/>The TS:2 Streak is Unstoppable.
-              </p>
-            </div>
-          )}
-        </div>
+      {/* ── RIGHT: Side Panel ── */}
+      <div style={{ width:260, flexShrink:0, display:'flex', flexDirection:'column', gap:12 }} id="side-panel">
 
         {/* Recent Activity */}
         <div className="card anim-up d3" style={{ padding:'16px 18px' }}>
@@ -435,16 +401,13 @@ export default function StudentsPage() {
           ))}
         </div>
 
-        {/* Secret hint */}
-        <div style={{ padding:'10px 14px', borderRadius:12, background:'var(--card2)', border:'1px solid var(--c-edge)', textAlign:'center' }}>
-          <p style={{ fontSize:'10px', color:'var(--ct4)', fontWeight:600 }}>💡 Try triple-clicking the TS:2 logo</p>
-        </div>
       </div>
 
       {showModal && <StudentModal student={editTarget} onClose={()=>setShowModal(false)} onSave={handleSave}/>}
+      {showProfile && <StudentProfileModal student={profileTarget} onClose={()=>setShowProfile(false)} />}
 
       <style>{`
-        @media(max-width:900px){ #easter-panel{display:none!important} }
+        @media(max-width:900px){ #side-panel{display:none!important} }
       `}</style>
     </div>
   );

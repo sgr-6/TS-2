@@ -3,6 +3,10 @@ import { useAllTeachers, useAllStudents, useAdminAllAttendance } from '../hooks/
 import { useAuth } from '../contexts/AuthContext';
 import AdminLayout from '../components/AdminLayout';
 import SettingsPage from './SettingsPage';
+import { initializeApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { doc, setDoc, addDoc, collection, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { firebaseConfig, db } from '../firebase';
 import {
   Users, GraduationCap, BarChart3, TrendingUp, AlertCircle,
   Building2, BookOpen, Hash, ChevronDown, ChevronUp, Search,
@@ -55,6 +59,15 @@ function Overview({ teachers, students, records, loading }) {
   }).filter(s => s.pct !== null && parseFloat(s.pct) < 75)
     .sort((a,b) => parseFloat(a.pct) - parseFloat(b.pct));
 
+  // Department-wise stats for overview
+  const depts = [...new Set(teachers.map(t=>t.department).filter(Boolean))];
+  const deptStats = depts.map(d=>{
+    const dt = teachers.filter(t=>t.department===d);
+    const dr = records.filter(r=>dt.some(t=>t.uid===r.userId));
+    const p = pct(dr.filter(r=>r.status==='present').length, dr.length);
+    return { dept:d, teachers:dt.length, students:students.filter(s=>s.department===d).length, pct:p };
+  });
+
   return (
     <div style={{ display:'flex',flexDirection:'column',gap:16 }}>
       <div>
@@ -104,6 +117,33 @@ function Overview({ teachers, students, records, loading }) {
         })}
       </div>
 
+      {/* Department-wise breakdown */}
+      <div className="card" style={{ padding:0,overflow:'hidden' }}>
+        <div style={{ padding:'14px 18px',borderBottom:'1px solid var(--c-edge)',display:'flex',alignItems:'center',gap:8 }}>
+          <Building2 size={15} style={{ color:'#f59e0b' }}/>
+          <p style={{ fontWeight:800,fontSize:'13px',color:'var(--ct1)' }}>Department Performance</p>
+          <span style={{ marginLeft:'auto',fontSize:'10px',color:'var(--ct3)',fontWeight:600 }}>Attendance by Dept</span>
+        </div>
+        <div style={{ display:'grid',gridTemplateColumns:'1fr 70px 80px 110px',padding:'8px 18px',background:'var(--card2)',borderBottom:'1px solid var(--c-edge)' }}>
+          {['Department','Teachers','Students','Avg Attendance'].map(h=>(
+            <p key={h} style={{ fontSize:'10px',fontWeight:800,textTransform:'uppercase',letterSpacing:'.07em',color:'var(--ct3)' }}>{h}</p>
+          ))}
+        </div>
+        {loading ? <p style={{ padding:'2rem',textAlign:'center',color:'var(--ct3)',fontSize:'13px' }}>Loading…</p>
+        : deptStats.length===0 ? <p style={{ padding:'2rem',textAlign:'center',color:'var(--ct3)',fontSize:'13px' }}>No department data yet.</p>
+        : deptStats.map((d,i)=>{
+          const col = statusColor(d.pct);
+          return (
+            <div key={d.dept} style={{ display:'grid',gridTemplateColumns:'1fr 70px 80px 110px',alignItems:'center',padding:'12px 18px',borderBottom:i<deptStats.length-1?'1px solid var(--c-edge)':'none' }}>
+              <p style={{ fontWeight:700,fontSize:'13px',color:'var(--ct1)' }}>{d.dept}</p>
+              <p style={{ fontWeight:700,fontSize:'13px',color:'var(--ct2)' }}>{d.teachers}</p>
+              <p style={{ fontWeight:700,fontSize:'13px',color:'var(--ct2)' }}>{d.students}</p>
+              <span style={{ display:'inline-flex',padding:'4px 12px',borderRadius:99,fontSize:'12px',fontWeight:700,background:`${col}15`,color:col,border:`1px solid ${col}28`,width:'fit-content' }}>{d.pct?`${d.pct}%`:'No data'}</span>
+            </div>
+          );
+        })}
+      </div>
+
       {/* At-risk students */}
       {studentPcts.length > 0 && (
         <div className="card" style={{ padding:0,overflow:'hidden' }}>
@@ -139,11 +179,16 @@ function Overview({ teachers, students, records, loading }) {
 function AllTeachers({ teachers, students, records, loading }) {
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState(null);
-  const filtered = teachers.filter(t =>
-    !search || (t.teacherName||'').toLowerCase().includes(search.toLowerCase()) ||
-    (t.department||'').toLowerCase().includes(search.toLowerCase()) ||
-    (t.subjectName||'').toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = teachers.filter(t => {
+    const s = search.toLowerCase();
+    if (!search) return true;
+    if ((t.teacherName||'').toLowerCase().includes(s)) return true;
+    if ((t.department||'').toLowerCase().includes(s)) return true;
+    if (t.classes) {
+      return t.classes.some(c => (c.subjectName||'').toLowerCase().includes(s) || (c.subjectCode||'').toLowerCase().includes(s));
+    }
+    return (t.subjectName||'').toLowerCase().includes(s);
+  });
   return (
     <div style={{ display:'flex',flexDirection:'column',gap:14 }}>
       <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',gap:12 }}>
@@ -159,7 +204,15 @@ function AllTeachers({ teachers, students, records, loading }) {
         const p = pct(tr.filter(r=>r.status==='present').length, tr.length);
         const col = statusColor(p);
         const dates = [...new Set(tr.map(r=>r.date))].length;
-        const ts = students.filter(s=>s.userId===t.uid);
+        const ts = students.filter(s => {
+          const sSection = s.section || (s.class && s.class.includes('A') ? 'A' : s.class && s.class.includes('B') ? 'B' : s.class && s.class.includes('C') ? 'C' : null);
+          const sSemester = s.semester || '4th Sem';
+          const sDept = s.department || 'ISE Dept';
+          if (t.classes) {
+            return t.classes.some(c => c.semester === sSemester && c.section === sSection && t.department === sDept);
+          }
+          return sSemester === t.semester && sSection === t.section && sDept === t.department;
+        }).sort((a,b) => (a.rollNo || '').localeCompare(b.rollNo || ''));
         const isOpen = expanded===t.id;
         return (
           <div key={t.id} className="card" style={{ padding:0,overflow:'hidden' }}>
@@ -169,7 +222,9 @@ function AllTeachers({ teachers, students, records, loading }) {
               </div>
               <div style={{ flex:1,minWidth:0 }}>
                 <p style={{ fontWeight:800,fontSize:'14px',color:'var(--ct1)' }}>{t.teacherName||'—'}</p>
-                <p style={{ fontSize:'11px',color:'var(--ct3)',fontWeight:500 }}>{t.department} · {t.subjectName} · {t.semester}</p>
+                <p style={{ fontSize:'11px',color:'var(--ct3)',fontWeight:500 }}>
+                  {t.department} · {t.classes ? t.classes.map(c => `${c.subjectName} (${c.section})`).join(', ') : `${t.subjectName} · ${t.semester}`}
+                </p>
               </div>
               <div style={{ display:'flex',alignItems:'center',gap:14,flexShrink:0 }}>
                 <div style={{ textAlign:'center' }}><p style={{ fontSize:'18px',fontWeight:900,color:'var(--sky)' }}>{ts.length}</p><p style={{ fontSize:'9px',color:'var(--ct4)',fontWeight:600,textTransform:'uppercase' }}>Students</p></div>
@@ -181,12 +236,31 @@ function AllTeachers({ teachers, students, records, loading }) {
             {isOpen && (
               <div style={{ borderTop:'1px solid var(--c-edge)',padding:'12px 18px',display:'flex',flexDirection:'column',gap:10 }}>
                 <div style={{ display:'flex',gap:10,flexWrap:'wrap' }}>
-                  {[['Email',t.email,'var(--sky)'],['Dept',t.department,'var(--ct1)'],['Subject Code',t.subjectCode,'var(--ct1)'],['Semester',t.semester,'var(--ct1)']].map(([l,v,c])=>(
-                    <div key={l} style={{ padding:'6px 12px',borderRadius:10,background:'var(--card2)',border:'1px solid var(--c-edge)' }}>
-                      <p style={{ fontSize:'9px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.07em',color:'var(--ct3)' }}>{l}</p>
-                      <p style={{ fontSize:'12px',fontWeight:700,color:c }}>{v||'—'}</p>
+                  <div style={{ padding:'6px 12px',borderRadius:10,background:'var(--card2)',border:'1px solid var(--c-edge)' }}>
+                    <p style={{ fontSize:'9px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.07em',color:'var(--ct3)' }}>Email</p>
+                    <p style={{ fontSize:'12px',fontWeight:700,color:'var(--sky)' }}>{t.email||'—'}</p>
+                  </div>
+                  <div style={{ padding:'6px 12px',borderRadius:10,background:'var(--card2)',border:'1px solid var(--c-edge)' }}>
+                    <p style={{ fontSize:'9px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.07em',color:'var(--ct3)' }}>Dept</p>
+                    <p style={{ fontSize:'12px',fontWeight:700,color:'var(--ct1)' }}>{t.department||'—'}</p>
+                  </div>
+                  {t.classes ? t.classes.map((cls, idx) => (
+                    <div key={idx} style={{ padding:'6px 12px',borderRadius:10,background:'var(--card2)',border:'1px solid var(--c-edge)' }}>
+                      <p style={{ fontSize:'9px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.07em',color:'var(--ct3)' }}>Class {idx+1}</p>
+                      <p style={{ fontSize:'12px',fontWeight:700,color:'var(--ct1)' }}>{cls.subjectCode} · {cls.semester} · Sec {cls.section}</p>
                     </div>
-                  ))}
+                  )) : (
+                    <>
+                      <div style={{ padding:'6px 12px',borderRadius:10,background:'var(--card2)',border:'1px solid var(--c-edge)' }}>
+                        <p style={{ fontSize:'9px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.07em',color:'var(--ct3)' }}>Subject Code</p>
+                        <p style={{ fontSize:'12px',fontWeight:700,color:'var(--ct1)' }}>{t.subjectCode||'—'}</p>
+                      </div>
+                      <div style={{ padding:'6px 12px',borderRadius:10,background:'var(--card2)',border:'1px solid var(--c-edge)' }}>
+                        <p style={{ fontSize:'9px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.07em',color:'var(--ct3)' }}>Semester</p>
+                        <p style={{ fontSize:'12px',fontWeight:700,color:'var(--ct1)' }}>{t.semester||'—'}</p>
+                      </div>
+                    </>
+                  )}
                 </div>
                 {ts.length > 0 && (
                   <div style={{ borderRadius:12,overflow:'hidden',border:'1px solid var(--c-edge)' }}>
@@ -201,7 +275,7 @@ function AllTeachers({ teachers, students, records, loading }) {
                         <div key={s.id} style={{ display:'grid',gridTemplateColumns:'1fr 100px 60px 90px',alignItems:'center',padding:'9px 14px',borderBottom:i<ts.length-1?'1px solid var(--c-edge)':'none' }}>
                           <p style={{ fontWeight:700,fontSize:'13px',color:'var(--ct1)' }}>{s.name}</p>
                           <p style={{ fontSize:'12px',color:'var(--ct2)' }}>{s.rollNo}</p>
-                          <p style={{ fontSize:'12px',color:'var(--ct2)' }}>{s.class}</p>
+                          <p style={{ fontSize:'12px',color:'var(--ct2)' }}>{s.section || s.class}</p>
                           <span style={{ display:'inline-flex',padding:'3px 10px',borderRadius:99,fontSize:'11px',fontWeight:700,background:`${sc}15`,color:sc,border:`1px solid ${sc}28` }}>{sp?`${sp}%`:'No data'}</span>
                         </div>
                       );
@@ -228,7 +302,21 @@ function AllStudents({ students, records, teachers, loading }) {
     const sr = records.filter(r=>r.studentId===s.id);
     const p = pct(sr.filter(r=>r.status==='present').length, sr.length);
     return { ...s, pct:p, totalDays:sr.length };
-  }).sort((a,b)=>(a.pct&&b.pct)?parseFloat(a.pct)-parseFloat(b.pct):0);
+  }).sort((a,b) => (a.rollNo || '').localeCompare(b.rollNo || ''));
+
+  const [deletingId, setDeletingId] = useState(null);
+
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) return;
+    setDeletingId(id);
+    try {
+      await deleteDoc(doc(db, 'students', id));
+    } catch (err) {
+      alert('Error deleting student: ' + err.message);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <div style={{ display:'flex',flexDirection:'column',gap:14 }}>
@@ -238,8 +326,8 @@ function AllStudents({ students, records, teachers, loading }) {
         <input className="input" placeholder="Search by name or roll number…" value={search} onChange={e=>setSearch(e.target.value)} style={{ paddingLeft:'2.2rem' }}/>
       </div>
       <div className="card" style={{ padding:0,overflow:'hidden' }}>
-        <div style={{ display:'grid',gridTemplateColumns:'44px 1fr 120px 60px 90px 90px',padding:'10px 18px',background:'var(--card2)',borderBottom:'1px solid var(--c-edge)' }}>
-          {['#','Name','Roll No','Class','Teacher','Attendance'].map(h=>(
+        <div style={{ display:'grid',gridTemplateColumns:'44px 1fr 120px 80px 70px 90px 40px',padding:'10px 18px',background:'var(--card2)',borderBottom:'1px solid var(--c-edge)' }}>
+          {['#','Name','Roll No','Class','Att','Avg','Del'].map(h=>(
             <p key={h} style={{ fontSize:'10px',fontWeight:800,textTransform:'uppercase',letterSpacing:'.07em',color:'var(--ct3)' }}>{h}</p>
           ))}
         </div>
@@ -247,13 +335,19 @@ function AllStudents({ students, records, teachers, loading }) {
         : filtered.map((s,i)=>{
           const col = statusColor(s.pct);
           return (
-            <div key={s.id} style={{ display:'grid',gridTemplateColumns:'44px 1fr 120px 60px 90px 90px',alignItems:'center',padding:'11px 18px',borderBottom:i<filtered.length-1?'1px solid var(--c-edge)':'none' }}>
+            <div key={s.id} style={{ display:'grid',gridTemplateColumns:'44px 1fr 120px 80px 70px 90px 40px',alignItems:'center',padding:'11px 18px',borderBottom:i<filtered.length-1?'1px solid var(--c-edge)':'none' }}>
               <span style={{ fontSize:'12px',fontWeight:600,color:'var(--ct4)' }}>{i+1}</span>
               <p style={{ fontWeight:700,fontSize:'13px',color:'var(--ct1)' }}>{s.name}</p>
               <p style={{ fontSize:'12px',color:'var(--ct2)',fontVariantNumeric:'tabular-nums' }}>{s.rollNo}</p>
-              <span style={{ display:'inline-flex',padding:'3px 10px',borderRadius:99,fontSize:'11px',fontWeight:700,background:'rgba(6,182,212,.12)',color:'#06B6D4',border:'1px solid rgba(6,182,212,.25)' }}>{s.class}</span>
-              <p style={{ fontSize:'11px',color:'var(--ct3)',fontWeight:500 }}>{teacherMap[s.userId]||'—'}</p>
-              <span style={{ display:'inline-flex',padding:'3px 10px',borderRadius:99,fontSize:'11px',fontWeight:700,background:`${col}15`,color:col,border:`1px solid ${col}28` }}>{s.pct?`${s.pct}%`:'No data'}</span>
+              <span style={{ display:'inline-flex',padding:'3px 10px',borderRadius:99,fontSize:'11px',fontWeight:700,background:'rgba(6,182,212,.12)',color:'#06B6D4',border:'1px solid rgba(6,182,212,.25)',whiteSpace:'nowrap' }}>{s.semester} {s.section}</span>
+              <p style={{ fontSize:'11px',color:'var(--ct3)',fontWeight:500 }}>{s.totalDays}</p>
+              <span style={{ display:'inline-flex',padding:'3px 10px',borderRadius:99,fontSize:'11px',fontWeight:700,background:`${col}15`,color:col,border:`1px solid ${col}28` }}>{s.pct?`${s.pct}%`:'—'}</span>
+              <button 
+                onClick={() => handleDelete(s.id, s.name)} 
+                disabled={deletingId === s.id}
+                style={{ width:24, height:24, display:'flex', alignItems:'center', justifyContent:'center', background:'transparent', border:'none', color:'var(--rose)', cursor:'pointer', opacity: deletingId === s.id ? 0.5 : 1 }}>
+                <XCircle size={16} />
+              </button>
             </div>
           );
         })}
@@ -271,7 +365,7 @@ function SystemReports({ teachers, students, records, loading }) {
     const dt = teachers.filter(t=>t.department===d);
     const dr = records.filter(r=>dt.some(t=>t.uid===r.userId));
     const p = pct(dr.filter(r=>r.status==='present').length, dr.length);
-    return { dept:d, teachers:dt.length, students:students.filter(s=>dt.some(t=>t.uid===s.userId)).length, pct:p };
+    return { dept:d, teachers:dt.length, students:students.filter(s=>s.department===d).length, pct:p };
   });
 
   return (
@@ -313,15 +407,128 @@ function SystemReports({ teachers, students, records, loading }) {
   );
 }
 
+/* ═══ BULK ONBOARDING ═══ */
+function BulkOnboard({ teachers, isHOD, myDept }) {
+  const [csvData, setCsvData] = useState('');
+  const [importType, setImportType] = useState('teachers');
+  const [targetTeacher, setTargetTeacher] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [log, setLog] = useState([]);
+
+  async function handleProcess() {
+    if (!csvData.trim()) return;
+    setLoading(true); setLog([]);
+    const lines = csvData.trim().split('\n');
+    const header = lines[0].toLowerCase().split(',').map(s=>s.trim());
+    
+    let tempAuth = null;
+    if (importType === 'teachers') {
+      const tempApp = initializeApp(firebaseConfig, 'TempApp_' + Date.now());
+      tempAuth = getAuth(tempApp);
+    }
+
+    for (let i = 1; i < lines.length; i++) {
+      const parts = lines[i].split(',');
+      if (parts.length < header.length) continue;
+      const row = {};
+      header.forEach((h, idx) => { row[h] = parts[idx]?.trim(); });
+      
+      if (importType === 'teachers') {
+        if (!row.email || !row.name) { setLog(p => [...p, `Row ${i}: Skipped (missing email or name)`]); continue; }
+        try {
+          const defaultPwd = row.name.toLowerCase().replace(/\s+/g, '') + '1234';
+          const cred = await createUserWithEmailAndPassword(tempAuth, row.email, defaultPwd);
+          const dept = isHOD ? myDept : (row.department || '');
+          await setDoc(doc(db, 'teachers', cred.user.uid), {
+            uid: cred.user.uid, email: row.email, teacherName: row.name, department: dept, role: 'teacher', isFirstSetup: true, createdAt: serverTimestamp()
+          });
+          await signOut(tempAuth);
+          setLog(p => [...p, `Row ${i}: Created teacher ${row.email}`]);
+        } catch (err) { setLog(p => [...p, `Row ${i}: Error ${row.email} - ${err.message}`]); }
+      } else {
+        if (!row.name || !row.rollno || !row.class) { setLog(p => [...p, `Row ${i}: Skipped (missing name/rollno/class)`]); continue; }
+        if (!targetTeacher) { setLog(p => [...p, `Row ${i}: Skipped (No teacher selected)`]); continue; }
+        try {
+          await addDoc(collection(db, 'students'), {
+            name: row.name, rollNo: row.rollno, class: row.class, userId: targetTeacher, createdAt: serverTimestamp()
+          });
+          setLog(p => [...p, `Row ${i}: Created student ${row.name}`]);
+        } catch (err) { setLog(p => [...p, `Row ${i}: Error ${row.name} - ${err.message}`]); }
+      }
+    }
+    setLoading(false);
+    setLog(p => [...p, '✅ Done processing.']);
+  }
+
+  return (
+    <div style={{ display:'flex',flexDirection:'column',gap:16 }}>
+      <div><h1 className="page-title">Bulk Onboard</h1><p className="page-sub">Import records via CSV</p></div>
+      <div className="card" style={{ padding: '24px 20px' }}>
+        <div style={{ display:'flex', gap:16, marginBottom:16 }}>
+          <select className="input" value={importType} onChange={e=>setImportType(e.target.value)} style={{ width:180 }}>
+            <option value="teachers">Import Teachers</option>
+            <option value="students">Import Students</option>
+          </select>
+          {importType === 'students' && (
+            <select className="input" value={targetTeacher} onChange={e=>setTargetTeacher(e.target.value)} style={{ flex:1 }}>
+              <option value="">-- Assign to Teacher --</option>
+              {teachers.map(t => <option key={t.uid} value={t.uid}>{t.teacherName || t.email}</option>)}
+            </select>
+          )}
+        </div>
+        <p style={{ fontSize: '13px', color: 'var(--ct3)', marginBottom: '16px' }}>
+          {importType === 'teachers' ? 'Headers required: name, email, department' : 'Headers required: name, rollno, class'}
+        </p>
+        <textarea className="input" rows={8} value={csvData} onChange={e => setCsvData(e.target.value)} placeholder="Paste CSV data..." style={{ width: '100%', marginBottom: '16px' }} />
+        <button className="btn btn-primary" onClick={handleProcess} disabled={loading || !csvData.trim()}>{loading ? 'Processing...' : 'Process CSV'}</button>
+      </div>
+      {log.length > 0 && (
+        <div className="card" style={{ padding: '16px', background: 'var(--card2)' }}>
+          <h3 style={{ fontSize:'13px', fontWeight:800, marginBottom:8 }}>Import Logs</h3>
+          <div style={{ maxHeight:200, overflowY:'auto', fontSize:'11px', color:'var(--ct2)', fontFamily:'monospace', display:'flex', flexDirection:'column', gap:4 }}>
+            {log.map((l, idx) => <span key={idx}>{l}</span>)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══ BROADCASTS ═══ */
+function Broadcasts({ isHOD, myDept }) {
+  const [msg, setMsg] = useState('');
+  return (
+    <div style={{ display:'flex',flexDirection:'column',gap:16 }}>
+      <div><h1 className="page-title">Broadcasts</h1><p className="page-sub">Announcements & Notices</p></div>
+      <div className="card" style={{ padding: '24px 20px' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ct1)', marginBottom: '8px' }}>{isHOD ? `Broadcast to ${myDept} Department` : 'Institution-wide Broadcast'}</h2>
+        <p style={{ fontSize: '13px', color: 'var(--ct3)', marginBottom: '16px' }}>Send an announcement to all teachers {isHOD ? 'in your department' : 'across all departments'}.</p>
+        <textarea className="input" rows={5} value={msg} onChange={e => setMsg(e.target.value)} placeholder="Type your broadcast message here..." style={{ width: '100%', marginBottom: '16px' }} />
+        <button className="btn btn-primary" onClick={() => { setMsg(''); alert('Broadcast sent! (Mock)'); }}>Send Broadcast</button>
+      </div>
+    </div>
+  );
+}
+
 /* ═══ MAIN ═══ */
 export default function AdminPage() {
+  const { userProfile } = useAuth();
   const [active, setActive] = useState('overview');
-  const { teachers, loading: tL } = useAllTeachers();
-  const { students, loading: sL } = useAllStudents();
-  const { records, loading: rL } = useAdminAllAttendance();
+  const { teachers: allTeachers, loading: tL } = useAllTeachers();
+  const { students: allStudents, loading: sL } = useAllStudents();
+  const { records: allRecords, loading: rL } = useAdminAllAttendance();
+
+  const isHOD = userProfile?.role === 'hod';
+  const myDept = userProfile?.department || 'Unknown';
+
+  const teachers = useMemo(() => isHOD ? allTeachers.filter(t => t.department === myDept) : allTeachers, [allTeachers, isHOD, myDept]);
+  const teacherUids = useMemo(() => new Set(teachers.map(t => t.uid)), [teachers]);
+  const students = useMemo(() => isHOD ? allStudents.filter(s => s.department === myDept) : allStudents, [allStudents, isHOD, myDept]);
+  const records = useMemo(() => isHOD ? allRecords.filter(r => teacherUids.has(r.userId)) : allRecords, [allRecords, isHOD, teacherUids]);
+
   const loading = tL || sL || rL;
 
-  const props = { teachers, students, records, loading };
+  const props = { teachers, students, records, loading, isHOD, myDept };
 
   return (
     <AdminLayout active={active} onNav={setActive}>
@@ -329,6 +536,8 @@ export default function AdminPage() {
       {active==='teachers' && <AllTeachers {...props}/>}
       {active==='students' && <AllStudents {...props}/>}
       {active==='reports'  && <SystemReports {...props}/>}
+      {active==='onboarding' && <BulkOnboard {...props}/>}
+      {active==='broadcasts' && <Broadcasts {...props}/>}
       {active==='settings' && <SettingsPage />}
     </AdminLayout>
   );

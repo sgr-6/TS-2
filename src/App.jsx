@@ -8,14 +8,23 @@ import StudentsPage from './pages/StudentsPage';
 import AttendancePage from './pages/AttendancePage';
 import ReportsPage from './pages/ReportsPage';
 import InsightsPage from './pages/InsightsPage';
-import QRCheckInPage from './pages/QRCheckInPage';
-import GeofencePage from './pages/GeofencePage';
 import AdminPage from './pages/AdminPage';
 import SettingsPage from './pages/SettingsPage';
+import FirstTimeSetupPage from './pages/FirstTimeSetupPage';
+import SeederPage from './pages/SeederPage';
 
 function PrivateRoute({ children }) {
-  const { user } = useAuth();
-  return user ? children : <Navigate to="/login" replace />;
+  const { user, userProfile, isAdmin, isHOD } = useAuth();
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (userProfile && !userProfile.firstTimeSetupComplete && !isAdmin && !isHOD) {
+    return <FirstTimeSetupPage />;
+  }
+
+  return children;
 }
 
 function PublicRoute({ children }) {
@@ -24,7 +33,7 @@ function PublicRoute({ children }) {
 }
 
 export default function App() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isHOD } = useAuth();
 
   return (
     <Routes>
@@ -40,7 +49,7 @@ export default function App() {
         path="/*"
         element={
           <PrivateRoute>
-            {isAdmin ? (
+            {(isAdmin || isHOD) ? (
               <AdminPage />
             ) : (
               <Layout>
@@ -50,10 +59,11 @@ export default function App() {
                   <Route path="/attendance" element={<AttendancePage />} />
                   <Route path="/reports" element={<ReportsPage />} />
                   <Route path="/insights" element={<InsightsPage />} />
-                  <Route path="/qr-checkin" element={<QRCheckInPage />} />
-                  <Route path="/geofence" element={<GeofencePage />} />
                   <Route path="/settings" element={<SettingsPage />} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  {/* SEEDER (Hidden Admin Route) */}
+          <Route path="/seed-section-c" element={<SeederPage />} />
+          
+          <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </Layout>
             )}

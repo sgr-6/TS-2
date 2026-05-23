@@ -1,42 +1,10 @@
 @import "tailwindcss";
 
 /* ══════════════════════════════════════════════
-   MIDNIGHT GLASS  — secret triple-click theme
-══════════════════════════════════════════════ */
-[data-theme="midnight"] {
-  --bg:       #060B18;
-  --bg1:      #0A1020;
-  --nav-bg:   rgba(4,8,20,.97);
-  --nav-edge: rgba(0,255,200,.18);
-  --nav-t1:   #00FFD1;
-  --nav-t2:   #00B4D8;
-  --nav-t3:   #0A3D5C;
-  --card:     #0F1E2E;
-  --card2:    #0A1828;
-  --card3:    #091320;
-  --ct1:      #E0F7FA;
-  --ct2:      #B2EBF2;
-  --ct3:      #4DD0E1;
-  --ct4:      #006064;
-  --c-edge:   rgba(0,255,200,.2);
-  --c-shad:   0 4px 24px rgba(0,255,200,.08), 0 1px 4px rgba(0,0,0,.6);
-  --c-shad-h: 0 10px 40px rgba(0,255,200,.18), 0 2px 8px rgba(0,0,0,.7);
-  --inp-bg:   rgba(0,255,200,.05);
-  --inp-edge: rgba(0,255,200,.2);
-  --inp-focus:rgba(0,255,200,.25);
-  --sage:     #00FFD1;
-  --sage-l:   rgba(0,255,209,.1);
-  --sage-b:   rgba(0,255,209,.3);
-  --primary:  #00FFD1;
-  --primary-l:rgba(0,255,209,.1);
-  --primary-b:rgba(0,255,209,.3);
-  --borderH:  rgba(0,255,200,.7);
-}
-
-/* ══════════════════════════════════════════════
-   ACCENT PALETTE  (same in both themes — muted, warm)
+   LIGHT CREME THEME (SJBIT Default)
 ══════════════════════════════════════════════ */
 :root {
+  /* Accent Palette */
   --sage:    #7EAD7C;  --sage-l:  rgba(126,173,124,.15); --sage-b:  rgba(126,173,124,.3);
   --coral:   #E08B6A;  --coral-l: rgba(224,139,106,.15); --coral-b: rgba(224,139,106,.3);
   --sky:     #7BB5E8;  --sky-l:   rgba(123,181,232,.15); --sky-b:   rgba(123,181,232,.3);
@@ -44,71 +12,8 @@
   --gold:    #E8BC60;  --gold-l:  rgba(232,188,96,.15);  --gold-b:  rgba(232,188,96,.3);
   --rose:    #E88090;  --rose-l:  rgba(232,128,144,.15); --rose-b:  rgba(232,128,144,.3);
   --teal:    #6DBDAC;  --teal-l:  rgba(109,189,172,.15); --teal-b:  rgba(109,189,172,.3);
-}
 
-/* ══════════════════════════════════════════════
-   DARK THEME  — Midnight Glass / Deep Sea
-══════════════════════════════════════════════ */
-:root {
-  /* ── Page & nav surfaces ── */
-  --bg:       #0B1120;
-  --bg1:      #0F172A;
-  --nav-bg:   rgba(11,17,32,0.97);
-  --nav-edge: rgba(255,255,255,0.08);
-  --nav-t1:   #F8FAFC;
-  --nav-t2:   #94A3B8;
-  --nav-t3:   #334155;
-
-  /* ── Translucent slate glass cards ── */
-  --card:     rgba(30,41,59,0.45);
-  --card2:    rgba(15,23,42,0.70);
-  --card3:    rgba(30,41,59,0.30);
-
-  /* ── Text hierarchy (light-on-dark) ── */
-  --ct1:      #FFFFFF;          /* Names: pure white, max legibility */
-  --ct2:      #94A3B8;          /* Roll #: muted blue-grey */
-  --ct3:      #64748B;          /* Labels */
-  --ct4:      #334155;          /* Very muted */
-
-  /* ── Borders: the "secret sauce" 1px inner glow ── */
-  --c-edge:   rgba(255,255,255,0.08);
-  --c-shad:   0 4px 24px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.4);
-  --c-shad-h: 0 8px 40px rgba(0,0,0,0.65), 0 2px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(125,211,252,0.25);
-
-  /* ── Glass blur — lets deep-navy gradient peek through ── */
-  --blur:     blur(16px) saturate(180%);
-
-  /* ── Inputs (inside glass cards) ── */
-  --inp-bg:   rgba(15,23,42,0.80);
-  --inp-edge: rgba(255,255,255,0.10);
-  --inp-focus:rgba(74,222,128,0.20);
-
-  /* ── Neon-pastel sage (primary accent in dark) ── */
-  --sage:     #4ADE80;
-  --sage-l:   rgba(74,222,128,0.12);
-  --sage-b:   rgba(74,222,128,0.40);
-
-  /* ── Theme-specific badge / button tokens ── */
-  --streak-bg:      rgba(253,224,71,0.12);
-  --streak-color:   #FDE047;
-  --streak-border:  rgba(253,224,71,0.35);
-  --streak-glow:    drop-shadow(0 0 6px rgba(253,224,71,0.35));
-
-  --add-btn-bg:     linear-gradient(135deg,#4ADE80,#22C55E);
-  --add-btn-color:  #052e16;
-  --add-btn-border: rgba(74,222,128,0.50);
-  --add-btn-shadow: 0 4px 16px rgba(74,222,128,0.30);
-
-  --row-hover-bg:   rgba(51,65,85,0.65);
-  --row-hover-bd:   rgba(125,211,252,0.55);
-
-  --greet-night-color: #818CF8;
-}
-
-/* ══════════════════════════════════════════════
-   LIGHT THEME  — warm sand page, white cards
-══════════════════════════════════════════════ */
-[data-theme="light"] {
+  /* Page & nav surfaces */
   --bg:       #E8E3D6;
   --bg1:      #DDD8CA;
   --nav-bg:   rgba(232,227,214,0.96);
@@ -117,6 +22,7 @@
   --nav-t2:   #6A6050;
   --nav-t3:   #A89880;
 
+  /* Cards */
   --card:     #FFFFFF;
   --card2:    #FAF8F4;
   --card3:    #F2EFE8;
@@ -133,11 +39,7 @@
   --inp-edge: rgba(0,0,0,0.10);
   --inp-focus:rgba(126,173,124,0.30);
 
-  --sage:     #7EAD7C;
-  --sage-l:   rgba(126,173,124,.15);
-  --sage-b:   rgba(126,173,124,.3);
-
-  /* Light-mode badge/button tokens */
+  /* Badge/button tokens */
   --streak-bg:      #FEF3C7;
   --streak-color:   #D97706;
   --streak-border:  #FDE68A;
@@ -150,8 +52,6 @@
 
   --row-hover-bg:   var(--card2);
   --row-hover-bd:   rgba(126,173,124,0.4);
-
-  --greet-night-color: #8B5CF6;
 }
 
 /* ══════════════════════════════════════════════
