@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { ShieldCheck, LayoutDashboard, Users, GraduationCap, BarChart3, LogOut, Menu, X, ChevronLeft, ChevronRight, Settings, Upload, Megaphone } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, Users, GraduationCap, BarChart3, LogOut, Menu, X, ChevronLeft, ChevronRight, Settings, Megaphone } from 'lucide-react';
 
 const ADMIN_NAV = [
   { key:'overview',  icon:LayoutDashboard, label:'Overview',       dot:'#6366f1' },
   { key:'teachers',  icon:GraduationCap,   label:'All Teachers',   dot:'#10b981' },
   { key:'students',  icon:Users,           label:'All Students',   dot:'#7BB5E8' },
   { key:'reports',   icon:BarChart3,       label:'System Reports', dot:'#f59e0b' },
-  { key:'onboarding',icon:Upload,          label:'Bulk Onboard',   dot:'#ec4899' },
   { key:'broadcasts',icon:Megaphone,       label:'Broadcasts',     dot:'#14b8a6' },
   { key:'settings',  icon:Settings,        label:'Settings',       dot:'#8B5CF6' },
 ];
@@ -18,21 +17,19 @@ export default function AdminLayout({ children, active, onNav }) {
   const [mob, setMob] = useState(false);
   useEffect(()=>{
     document.documentElement.setAttribute('data-theme', 'light');
-    localStorage.setItem('ts2-theme', 'light');
+    localStorage.setItem('sjbit-theme', 'light');
   },[]);
 
   function Rail({ isMini, onNavClick }) {
     return (
       <div style={{ display:'flex', flexDirection:'column', height:'100%', overflow:'hidden' }}>
         {/* Logo */}
-        <div style={{ display:'flex', alignItems:'center', gap:10, padding:'18px 14px 16px', borderBottom:'1px solid var(--nav-edge)' }}>
-          <div style={{ width:34,height:34,borderRadius:10,flexShrink:0, background:'linear-gradient(135deg,#6366f1,#8B5CF6)', display:'flex',alignItems:'center',justifyContent:'center', boxShadow:'0 3px 10px rgba(99,102,241,.35)' }}>
-            <ShieldCheck size={18} color="#fff"/>
-          </div>
+        <div style={{ display:'flex', alignItems:'center', justifyContent: isMini ? 'center' : 'flex-start', gap:10, padding: isMini ? '14px 8px 12px' : '14px 14px 12px', borderBottom:'1px solid var(--nav-edge)' }}>
+          <img src="/sjbit-logo-v2.jpg" alt="SJBIT Logo" style={{ width: isMini ? 42 : 56, height: isMini ? 42 : 56, borderRadius:8, objectFit:'contain', flexShrink:0, transition: 'all 0.28s' }} />
           {!isMini && (
             <div>
-              <p style={{ fontWeight:900, fontSize:'13px', color:'var(--nav-t1)', letterSpacing:'-.02em', lineHeight:1 }}>ADMIN</p>
-              <p style={{ fontSize:'9px', fontWeight:600, color:'#6366f1', letterSpacing:'.08em', textTransform:'uppercase' }}>SJBIT CONTROL</p>
+              <p style={{ fontWeight:900, fontSize:'14.5px', color:'var(--nav-t1)', letterSpacing:'-.02em', lineHeight:1.1, marginBottom: 2 }}>SJBIT</p>
+              <p style={{ fontSize:'9px', fontWeight:600, color:'#6366f1', letterSpacing:'.08em', textTransform:'uppercase' }}>Admin Portal</p>
             </div>
           )}
         </div>
@@ -108,9 +105,7 @@ export default function AdminLayout({ children, active, onNav }) {
           <button onClick={()=>setMob(true)} style={{ width:34,height:34,borderRadius:10,border:'1px solid var(--nav-edge)',background:'transparent',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--nav-t2)' }}>
             <Menu size={17}/>
           </button>
-          <div style={{ width:28,height:28,borderRadius:8,background:'linear-gradient(135deg,#6366f1,#8B5CF6)',display:'flex',alignItems:'center',justifyContent:'center' }}>
-            <ShieldCheck size={14} color="#fff"/>
-          </div>
+          <img src="/sjbit-logo-v2.jpg" alt="SJBIT Logo" style={{ width:32, height:32, objectFit:'contain' }} />
           <span style={{ fontWeight:900,fontSize:'14px',flex:1,color:'var(--nav-t1)' }}>Admin Panel</span>
         </header>
 

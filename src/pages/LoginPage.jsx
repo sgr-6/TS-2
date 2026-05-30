@@ -36,14 +36,18 @@ export default function LoginPage() {
     } catch(err) {
       if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials') {
         const e = email.toLowerCase().trim();
-        if ((e === 'admin@gmail.com' && pass === 'admin789') || (e === 'hodise@gmail.com' && pass === 'hodise789')) {
+        if ((e === 'admin@gmail.com' && pass === 'admin789') || (e === 'hodise@gmail.com' && pass === 'hodise789') || (e === 'harshitha271296@gmail.com' && pass === 'temp789')) {
           try {
             const cred = await createUserWithEmailAndPassword(auth, e, pass);
             await setDoc(doc(db, 'teachers', cred.user.uid), {
               email: e,
               uid: cred.user.uid,
-              role: e === 'admin@gmail.com' ? 'admin' : 'hod',
-              department: e === 'hodise@gmail.com' ? 'ISE Dept' : 'Admin',
+              role: e === 'admin@gmail.com' ? 'admin' : (e === 'hodise@gmail.com' ? 'hod' : 'teacher'),
+              department: e === 'hodise@gmail.com' || e === 'harshitha271296@gmail.com' ? 'ISE Dept' : 'Admin',
+              subjectName: e === 'harshitha271296@gmail.com' ? 'OS' : '',
+              className: e === 'harshitha271296@gmail.com' ? 'ISE' : '',
+              section: e === 'harshitha271296@gmail.com' ? 'C' : '',
+              teacherName: e === 'harshitha271296@gmail.com' ? 'Harshitha' : '',
               firstTimeSetupComplete: true,
               createdAt: serverTimestamp(),
             });
@@ -81,23 +85,24 @@ export default function LoginPage() {
         ))}
         <div style={{ position:'relative',zIndex:1,padding:'2.5rem',height:'100%',display:'flex',flexDirection:'column',justifyContent:'space-between' }}>
           {/* Brand */}
-          <div style={{ display:'flex',alignItems:'center',gap:10 }}>
-            <div style={{ width:36,height:36,borderRadius:10,background:'linear-gradient(135deg,#7EAD7C,#6DBDAC)',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 12px rgba(126,173,124,.4)' }}>
-              <GraduationCap size={20} color="#fff"/>
+          <div style={{ display:'flex',alignItems:'center',gap:12 }}>
+            <img src="/sjbit-logo-v2.jpg" alt="SJBIT Logo" style={{ width:64, height:64, objectFit:'contain', borderRadius:8 }} />
+            <div>
+              <span style={{ fontWeight:900,fontSize:'20px',color:'var(--nav-t1)',letterSpacing:'-.02em',display:'block',lineHeight:1 }}>SJBIT</span>
+              <span style={{ fontSize:'10px',fontWeight:700,color:'var(--nav-t3)',letterSpacing:'.08em',textTransform:'uppercase',marginTop:4,display:'block' }}>Bengaluru-60</span>
             </div>
-            <span style={{ fontWeight:900,fontSize:'16px',color:'var(--nav-t1)',letterSpacing:'-.02em' }}>SJBIT</span>
           </div>
           {/* Hero text */}
-          <div>
-            <div style={{ display:'inline-flex',alignItems:'center',gap:6,padding:'5px 12px',borderRadius:99,background:'rgba(126,173,124,.12)',border:'1px solid rgba(126,173,124,.25)',marginBottom:'1.2rem' }}>
-              <div style={{ width:6,height:6,borderRadius:'50%',background:'#7EAD7C' }}/>
-              <span style={{ fontSize:'10px',fontWeight:700,color:'#7EAD7C',letterSpacing:'.08em',textTransform:'uppercase' }}>Enterprise Attendance System</span>
-            </div>
-            <h1 style={{ fontSize:'2.5rem',fontWeight:900,color:'var(--nav-t1)',lineHeight:1.1,letterSpacing:'-.04em',marginBottom:'1rem' }}>
-              Secure,<br/>Streamlined,<br/><span style={{ color:'#7EAD7C' }}>Scalable.</span>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize:'14px',fontWeight:700,color:'var(--nav-t2)',letterSpacing:'.05em',marginBottom:'1.5rem' }}>|| JAI SRI GURUDEV ||</p>
+            <h3 style={{ fontSize:'1.4rem',fontWeight:600,color:'var(--nav-t1)',lineHeight:1.2,marginBottom:'0.5rem', letterSpacing:'0.02em' }}>
+              Sri Adichunchanagiri Shikshana Trust ®
+            </h3>
+            <h1 style={{ fontSize:'2.8rem',fontWeight:900,color:'#f97316',lineHeight:1.1,letterSpacing:'-.02em',marginBottom:'0.8rem' }}>
+              SJB INSTITUTE OF TECHNOLOGY
             </h1>
-            <p style={{ fontSize:'14px',color:'var(--nav-t2)',lineHeight:1.65,maxWidth:340 }}>
-              Authorized access only. Real-time attendance, predictive analytics, and department management for SJBIT.
+            <p style={{ fontSize:'12px',fontWeight:700,color:'var(--nav-t2)',letterSpacing:'.04em',textTransform:'uppercase' }}>
+              AN AUTONOMOUS INSTITUTE UNDER VISVESVARAYA TECHNOLOGICAL UNIVERSITY
             </p>
           </div>
           {/* Feature tags */}
@@ -115,9 +120,7 @@ export default function LoginPage() {
 
           {/* Mobile brand */}
           <div id="mob-brand" style={{ textAlign:'center',marginBottom:'2rem' }}>
-            <div style={{ width:52,height:52,borderRadius:14,background:'linear-gradient(135deg,#7EAD7C,#6DBDAC)',display:'inline-flex',alignItems:'center',justifyContent:'center',marginBottom:12,boxShadow:'0 6px 20px rgba(126,173,124,.35)' }}>
-              <GraduationCap size={24} color="#fff"/>
-            </div>
+            <img src="/sjbit-logo-v2.jpg" alt="SJBIT Logo" style={{ width:72, height:72, objectFit:'contain', marginBottom:12 }} />
             <h1 style={{ fontSize:'1.6rem',fontWeight:900,letterSpacing:'-.04em',color:'var(--nav-t1)' }}>SJBIT</h1>
             <p style={{ fontSize:'12px',color:'var(--nav-t2)',marginTop:4,fontWeight:500 }}>Enterprise Attendance System</p>
           </div>
@@ -186,7 +189,6 @@ export default function LoginPage() {
 
           </div>
 
-          <p style={{ textAlign:'center',fontSize:'11px',color:'var(--nav-t3)',marginTop:18,fontWeight:500 }}>© 2025 SJBIT Enterprise · Powered by Firebase</p>
         </div>
       </div>
 

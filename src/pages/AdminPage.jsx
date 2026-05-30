@@ -72,7 +72,7 @@ function Overview({ teachers, students, records, loading }) {
     <div style={{ display:'flex',flexDirection:'column',gap:16 }}>
       <div>
         <h1 className="page-title">Admin Overview</h1>
-        <p className="page-sub">Monitoring all teachers and students across TS:2</p>
+        <p className="page-sub">Monitoring all teachers and students across SJBIT</p>
       </div>
 
       {/* Stats grid */}
@@ -407,92 +407,7 @@ function SystemReports({ teachers, students, records, loading }) {
   );
 }
 
-/* ═══ BULK ONBOARDING ═══ */
-function BulkOnboard({ teachers, isHOD, myDept }) {
-  const [csvData, setCsvData] = useState('');
-  const [importType, setImportType] = useState('teachers');
-  const [targetTeacher, setTargetTeacher] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [log, setLog] = useState([]);
 
-  async function handleProcess() {
-    if (!csvData.trim()) return;
-    setLoading(true); setLog([]);
-    const lines = csvData.trim().split('\n');
-    const header = lines[0].toLowerCase().split(',').map(s=>s.trim());
-    
-    let tempAuth = null;
-    if (importType === 'teachers') {
-      const tempApp = initializeApp(firebaseConfig, 'TempApp_' + Date.now());
-      tempAuth = getAuth(tempApp);
-    }
-
-    for (let i = 1; i < lines.length; i++) {
-      const parts = lines[i].split(',');
-      if (parts.length < header.length) continue;
-      const row = {};
-      header.forEach((h, idx) => { row[h] = parts[idx]?.trim(); });
-      
-      if (importType === 'teachers') {
-        if (!row.email || !row.name) { setLog(p => [...p, `Row ${i}: Skipped (missing email or name)`]); continue; }
-        try {
-          const defaultPwd = row.name.toLowerCase().replace(/\s+/g, '') + '1234';
-          const cred = await createUserWithEmailAndPassword(tempAuth, row.email, defaultPwd);
-          const dept = isHOD ? myDept : (row.department || '');
-          await setDoc(doc(db, 'teachers', cred.user.uid), {
-            uid: cred.user.uid, email: row.email, teacherName: row.name, department: dept, role: 'teacher', isFirstSetup: true, createdAt: serverTimestamp()
-          });
-          await signOut(tempAuth);
-          setLog(p => [...p, `Row ${i}: Created teacher ${row.email}`]);
-        } catch (err) { setLog(p => [...p, `Row ${i}: Error ${row.email} - ${err.message}`]); }
-      } else {
-        if (!row.name || !row.rollno || !row.class) { setLog(p => [...p, `Row ${i}: Skipped (missing name/rollno/class)`]); continue; }
-        if (!targetTeacher) { setLog(p => [...p, `Row ${i}: Skipped (No teacher selected)`]); continue; }
-        try {
-          await addDoc(collection(db, 'students'), {
-            name: row.name, rollNo: row.rollno, class: row.class, userId: targetTeacher, createdAt: serverTimestamp()
-          });
-          setLog(p => [...p, `Row ${i}: Created student ${row.name}`]);
-        } catch (err) { setLog(p => [...p, `Row ${i}: Error ${row.name} - ${err.message}`]); }
-      }
-    }
-    setLoading(false);
-    setLog(p => [...p, '✅ Done processing.']);
-  }
-
-  return (
-    <div style={{ display:'flex',flexDirection:'column',gap:16 }}>
-      <div><h1 className="page-title">Bulk Onboard</h1><p className="page-sub">Import records via CSV</p></div>
-      <div className="card" style={{ padding: '24px 20px' }}>
-        <div style={{ display:'flex', gap:16, marginBottom:16 }}>
-          <select className="input" value={importType} onChange={e=>setImportType(e.target.value)} style={{ width:180 }}>
-            <option value="teachers">Import Teachers</option>
-            <option value="students">Import Students</option>
-          </select>
-          {importType === 'students' && (
-            <select className="input" value={targetTeacher} onChange={e=>setTargetTeacher(e.target.value)} style={{ flex:1 }}>
-              <option value="">-- Assign to Teacher --</option>
-              {teachers.map(t => <option key={t.uid} value={t.uid}>{t.teacherName || t.email}</option>)}
-            </select>
-          )}
-        </div>
-        <p style={{ fontSize: '13px', color: 'var(--ct3)', marginBottom: '16px' }}>
-          {importType === 'teachers' ? 'Headers required: name, email, department' : 'Headers required: name, rollno, class'}
-        </p>
-        <textarea className="input" rows={8} value={csvData} onChange={e => setCsvData(e.target.value)} placeholder="Paste CSV data..." style={{ width: '100%', marginBottom: '16px' }} />
-        <button className="btn btn-primary" onClick={handleProcess} disabled={loading || !csvData.trim()}>{loading ? 'Processing...' : 'Process CSV'}</button>
-      </div>
-      {log.length > 0 && (
-        <div className="card" style={{ padding: '16px', background: 'var(--card2)' }}>
-          <h3 style={{ fontSize:'13px', fontWeight:800, marginBottom:8 }}>Import Logs</h3>
-          <div style={{ maxHeight:200, overflowY:'auto', fontSize:'11px', color:'var(--ct2)', fontFamily:'monospace', display:'flex', flexDirection:'column', gap:4 }}>
-            {log.map((l, idx) => <span key={idx}>{l}</span>)}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 /* ═══ BROADCASTS ═══ */
 function Broadcasts({ isHOD, myDept }) {
@@ -536,7 +451,6 @@ export default function AdminPage() {
       {active==='teachers' && <AllTeachers {...props}/>}
       {active==='students' && <AllStudents {...props}/>}
       {active==='reports'  && <SystemReports {...props}/>}
-      {active==='onboarding' && <BulkOnboard {...props}/>}
       {active==='broadcasts' && <Broadcasts {...props}/>}
       {active==='settings' && <SettingsPage />}
     </AdminLayout>

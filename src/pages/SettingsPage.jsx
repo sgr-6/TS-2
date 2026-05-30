@@ -80,7 +80,7 @@ export default function SettingsPage() {
         <p className="page-sub">Manage your account and preferences</p>
       </div>
 
-      <div className="card" style={{ maxWidth: 400 }}>
+      <div className="card" style={{ maxWidth: 560, width:'100%', padding: '1.5rem' }}>
         <h2 style={{ fontSize:'14px',fontWeight:800,color:'var(--ct1)',marginBottom:16 }}>Profile Information</h2>
         
         {profileMsg.text && (
@@ -95,9 +95,17 @@ export default function SettingsPage() {
         )}
 
         <form onSubmit={handleUpdateProfile} style={{ display:'flex',flexDirection:'column',gap:12,marginBottom:32 }}>
-          <div><p style={{ fontSize:'10px',color:'var(--ct3)',fontWeight:700,textTransform:'uppercase',marginBottom:4 }}>Email</p><p style={{ fontWeight:600,color:'var(--ct1)',fontSize:'14px' }}>{user?.email}</p></div>
-          <div><p style={{ fontSize:'10px',color:'var(--ct3)',fontWeight:700,textTransform:'uppercase',marginBottom:4 }}>Role</p><p style={{ fontWeight:600,color:'var(--sage)',textTransform:'capitalize',fontSize:'14px' }}>{userProfile?.role || 'Admin'}</p></div>
-          
+          <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:12 }}>
+            <div>
+              <p style={{ fontSize:'10px',color:'var(--ct3)',fontWeight:700,textTransform:'uppercase',marginBottom:4 }}>Email</p>
+              <p style={{ fontWeight:600,color:'var(--ct1)',fontSize:'13px',wordBreak:'break-all' }}>{user?.email}</p>
+            </div>
+            <div>
+              <p style={{ fontSize:'10px',color:'var(--ct3)',fontWeight:700,textTransform:'uppercase',marginBottom:4 }}>Role</p>
+              <p style={{ fontWeight:600,color:'var(--sage)',textTransform:'capitalize',fontSize:'13px' }}>{userProfile?.role || 'Admin'}</p>
+            </div>
+          </div>
+
           <div>
             <label style={{ fontSize:'10px',color:'var(--ct3)',fontWeight:700,textTransform:'uppercase',display:'block',marginBottom:4 }}>Name</label>
             <input className="input" type="text" value={profileData.teacherName} onChange={e=>setProfileData(p=>({...p, teacherName: e.target.value}))} required />
@@ -106,30 +114,33 @@ export default function SettingsPage() {
             <label style={{ fontSize:'10px',color:'var(--ct3)',fontWeight:700,textTransform:'uppercase',display:'block',marginBottom:4 }}>Department</label>
             <input className="input" type="text" value={profileData.department} onChange={e=>setProfileData(p=>({...p, department: e.target.value}))} required />
           </div>
-          <div style={{ display:'flex',gap:12 }}>
-            <div style={{ flex:1 }}>
+
+          <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10 }}>
+            <div>
               <label style={{ fontSize:'10px',color:'var(--ct3)',fontWeight:700,textTransform:'uppercase',display:'block',marginBottom:4 }}>Class</label>
               <input className="input" type="text" value={profileData.className} onChange={e=>setProfileData(p=>({...p, className: e.target.value}))} placeholder="e.g. ISE" required />
             </div>
-            <div style={{ flex:1 }}>
+            <div>
               <label style={{ fontSize:'10px',color:'var(--ct3)',fontWeight:700,textTransform:'uppercase',display:'block',marginBottom:4 }}>Section</label>
               <input className="input" type="text" value={profileData.section} onChange={e=>setProfileData(p=>({...p, section: e.target.value}))} placeholder="e.g. A" required />
             </div>
-            <div style={{ flex:1 }}>
+            <div>
               <label style={{ fontSize:'10px',color:'var(--ct3)',fontWeight:700,textTransform:'uppercase',display:'block',marginBottom:4 }}>Semester</label>
               <input className="input" type="text" value={profileData.semester} onChange={e=>setProfileData(p=>({...p, semester: e.target.value}))} placeholder="e.g. 4" required />
             </div>
           </div>
-          <div style={{ display:'flex',gap:12 }}>
-            <div style={{ flex:2 }}>
+
+          <div style={{ display:'grid',gridTemplateColumns:'2fr 1fr',gap:10 }}>
+            <div>
               <label style={{ fontSize:'10px',color:'var(--ct3)',fontWeight:700,textTransform:'uppercase',display:'block',marginBottom:4 }}>Subject Name</label>
               <input className="input" type="text" value={profileData.subjectName} onChange={e=>setProfileData(p=>({...p, subjectName: e.target.value}))} placeholder="e.g. Mathematics" required />
             </div>
-            <div style={{ flex:1 }}>
+            <div>
               <label style={{ fontSize:'10px',color:'var(--ct3)',fontWeight:700,textTransform:'uppercase',display:'block',marginBottom:4 }}>Subject Code</label>
               <input className="input" type="text" value={profileData.subjectCode} onChange={e=>setProfileData(p=>({...p, subjectCode: e.target.value}))} placeholder="e.g. 23IST420" required />
             </div>
           </div>
+
           <button type="submit" className="btn btn-primary" disabled={profileLoading} style={{ marginTop:8,borderRadius:10,height:38,fontWeight:700 }}>
             {profileLoading ? 'Saving...' : 'Save Profile Details'}
           </button>

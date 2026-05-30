@@ -32,8 +32,6 @@ export default function AttendancePage() {
         if (t.includes(n) || t.includes(n.split(' ')[0])) {
           if (t.includes('present')) { setOverrides(p=>({...p,[s.id]:'present'})); setVoiceFeedback(`Marked ${s.name} present`); matched=true; }
           else if (t.includes('absent')) { setOverrides(p=>({...p,[s.id]:'absent'})); setVoiceFeedback(`Marked ${s.name} absent`); matched=true; }
-          else if (t.includes('medical')) { setOverrides(p=>({...p,[s.id]:'medical'})); setVoiceFeedback(`Marked ${s.name} medical`); matched=true; }
-          else if (t.includes('duty') || t.includes('sports')) { setOverrides(p=>({...p,[s.id]:'duty'})); setVoiceFeedback(`Marked ${s.name} duty`); matched=true; }
         }
       });
       if (!matched) setVoiceFeedback("Didn't catch the name. Say again.");
@@ -165,8 +163,6 @@ export default function AttendancePage() {
             const statusColorMap = {
               'present': 'var(--sage)',
               'absent': 'var(--rose)',
-              'medical': 'var(--sky)',
-              'duty': 'var(--gold)'
             };
             const col = statusColorMap[currentStatus];
             
@@ -192,8 +188,6 @@ export default function AttendancePage() {
                   {[
                     {k:'present', l:'Present', c:'var(--sage)', bg:'var(--sage-l)'},
                     {k:'absent', l:'Absent', c:'var(--rose)', bg:'var(--rose-l)'},
-                    {k:'medical', l:'Medical', c:'var(--sky)', bg:'var(--sky-l)'},
-                    {k:'duty', l:'Duty', c:'var(--gold)', bg:'var(--gold-l)'}
                   ].map(btn => (
                     <button key={btn.k} onClick={(e)=>{e.stopPropagation();setStudentStatus(s.id,btn.k);}}
                       style={{

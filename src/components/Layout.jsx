@@ -51,7 +51,7 @@ export default function Layout({ children }) {
   useEffect(()=>{
     // Force Light Creme theme for SJBIT branding
     document.documentElement.setAttribute('data-theme', 'light');
-    localStorage.setItem('ts2-theme', 'light');
+    localStorage.setItem('sjbit-theme', 'light');
   }, []);
 
   const initial = (userProfile?.teacherName||user?.email||'?')[0].toUpperCase();
@@ -59,13 +59,11 @@ export default function Layout({ children }) {
   const Rail = ({ isMini, onNav }) => (
     <div style={{ display:'flex', flexDirection:'column', height:'100%', overflow:'hidden' }}>
       {/* Logo */}
-      <div style={{ display:'flex', alignItems:'center', gap:10, padding:'18px 14px 16px', borderBottom:'1px solid var(--nav-edge)' }}>
-        <div style={{ width:34,height:34,borderRadius:10,flexShrink:0, background:'linear-gradient(135deg,#7EAD7C,#6DBDAC)', display:'flex',alignItems:'center',justifyContent:'center', boxShadow:'0 3px 10px rgba(126,173,124,.35)', cursor:'default', userSelect:'none' }}>
-          <GraduationCap size={18} color="#fff"/>
-        </div>
+      <div style={{ display:'flex', alignItems:'center', justifyContent: isMini ? 'center' : 'flex-start', gap:10, padding: isMini ? '14px 8px 12px' : '14px 14px 12px', borderBottom:'1px solid var(--nav-edge)' }}>
+        <img src="/sjbit-logo-v2.jpg" alt="SJBIT Logo" style={{ width: isMini ? 42 : 56, height: isMini ? 42 : 56, borderRadius:8, objectFit:'contain', flexShrink:0, transition: 'all 0.28s' }} />
         {!isMini && (
           <div style={{ flex:1 }}>
-            <p style={{ fontSize:'15px',fontWeight:900,letterSpacing:'-.025em',color:'var(--nav-t1)' }}>SJBIT</p>
+            <p style={{ fontSize:'16px',fontWeight:900,letterSpacing:'-.025em',color:'var(--nav-t1)', lineHeight:1.1, marginBottom: 2 }}>SJBIT</p>
             <p style={{ fontSize:'9px',fontWeight:600,color:'var(--nav-t3)',letterSpacing:'.1em',textTransform:'uppercase' }}>Attendance Portal</p>
           </div>
         )}
@@ -165,9 +163,7 @@ export default function Layout({ children }) {
           backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',
         }}>
           <button className="icon-btn" onClick={()=>setMob(true)}><Menu size={17}/></button>
-          <div style={{ width:28,height:28,borderRadius:8,background:'linear-gradient(135deg,#7EAD7C,#6DBDAC)',display:'flex',alignItems:'center',justifyContent:'center' }}>
-            <GraduationCap size={14} color="#fff"/>
-          </div>
+          <img src="/sjbit-logo-v2.jpg" alt="SJBIT Logo" style={{ width:32, height:32, objectFit:'contain' }} />
           <span style={{ fontWeight:900,fontSize:'14px',flex:1,color:'var(--nav-t1)',letterSpacing:'-.02em' }}>SJBIT</span>
         </header>
 

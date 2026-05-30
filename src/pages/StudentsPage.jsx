@@ -25,7 +25,7 @@ function StudentModal({ student, onClose, onSave }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!name.trim()||!rollNo.trim()||!cls.trim()) { setError('All fields are required.'); return; }
+    if (!name.trim()||!rollNo.trim()) { setError('All fields are required.'); return; }
     setSaving(true);
     try { await onSave({name:name.trim(),rollNo:rollNo.trim()}); onClose(); }
     catch(err) { setError(err.message); }

@@ -96,33 +96,7 @@ export default function SeederPage() {
     addLog('Starting Seeding Process for Section C...');
 
     try {
-      // 1. Seed Teachers
-      for (const t of TEACHERS) {
-        addLog(`Creating teacher: ${t.email}`);
-        try {
-          const cred = await createUserWithEmailAndPassword(secondaryAuth, t.email, t.pass);
-          await setDoc(doc(db, 'teachers', cred.user.uid), {
-            email: t.email,
-            role: 'teacher',
-            teacherName: t.name,
-            department: 'ISE Dept',
-            semester: '4th Sem',
-            section: 'C',
-            subjectCode: t.subCode,
-            subjectName: t.subName,
-            firstTimeSetupComplete: false,
-            isDemoAccount: true,
-            createdAt: serverTimestamp()
-          });
-          addLog(`✅ Successfully created teacher ${t.name} and mapped to Section C.`);
-        } catch (err) {
-          if (err.code === 'auth/email-already-in-use') {
-            addLog(`⚠️ Teacher ${t.email} already exists.`);
-          } else {
-            addLog(`❌ Error creating ${t.email}: ${err.message}`);
-          }
-        }
-      }
+      // Teacher seeding removed per request.
 
       // 2. Seed Students
       addLog(`Creating ${STUDENTS.length} students for ISE Dept - 4th Sem - Section C...`);
